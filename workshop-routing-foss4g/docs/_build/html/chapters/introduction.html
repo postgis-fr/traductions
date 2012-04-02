@@ -1,0 +1,146 @@
+
+<style>
+	.toctree-wrapper {
+		-webkit-column-count: 2;
+		-moz-column-count: 2;
+		column-count: 2;
+	}
+</style>
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>1. Introduction &mdash; Travaux pratiques - Routage FOSS4G avec les outils de pgRouting, le reseau routier d&#39;OpenStreetMap et GeoExt</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="top" title="Travaux pratiques - Routage FOSS4G avec les outils de pgRouting, le reseau routier d&#39;OpenStreetMap et GeoExt" href="../index.html" />
+    <link rel="next" title="2. À propos" href="about.html" />
+    <link rel="prev" title="pgRouting Workshop Manual" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="about.html" title="2. À propos"
+             accesskey="N">suivant</a></li>
+        <li class="right" >
+          <a href="../index.html" title="pgRouting Workshop Manual"
+             accesskey="P">précédent</a> |</li>
+        <li><a href="../index.html">Travaux pratiques - Routage FOSS4G avec les outils de pgRouting, le reseau routier d&#39;OpenStreetMap et GeoExt</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="introduction">
+<h1>1. Introduction<a class="headerlink" href="#introduction" title="Lien permanent vers ce titre">¶</a></h1>
+<p class="rubric">Résumé</p>
+<p><a class="reference external" href="http://www.pgrouting.org">pgRouting</a> ajoute les fonctionalités de routage à <a class="reference external" href="http://www.postgis.org">PostGIS</a>. Ces travaux pratiques d&#8217;introduction vont vous présenter comment. Il présente un exemple pratique de comment utiliser pgRouting avec les données du réseau routier d&#8217;<a class="reference external" href="http://www.openstreetmap.org">OpenStreetMap</a>. Il explique les étapes permettant la préparation des données, effectuer des requêtes de routage, l&#8217;assignation des coûts et l&#8217;utilisation de <a class="reference external" href="http://www.geoext.org">GeoExt</a> pour présenter les chamins depuis une application de web-mapping.</p>
+<p>La navigration dans un réseau de routes nécessite des algorithmes de routage complex qui supportent la restriction des virages utilisables et même des attributs dépendant du temps. pgRouting est une librairie OpenSource qui peut être étendue qui fournit une grande variété d&#8217;outils pour la recherche de plus courts chemins comme une extension de PortgreSQL et de PostGIS. Ces travaux pratiques vont expliquer la recherche de plus courts chemin avec pgRouting dans un réseau routier réel et comment la structure des données est importante pour obtenir des résultats plus rapidement. Vous apprendrez aussi les difficultés et le limitations de pgRouting dans le cadre d&#8217;application SIG.</p>
+<p>Pour fournir un exemple pratique, ces travaux pratiques utiliseront les données OpenStreetMap de Denver. Vous apprendrez comment convertir les données dans le format requis et comment calibrer les données avec les attributs de &#8220;coût&#8221;. De plus, nuos allons expliquer la différence entre l&#8217;agorithme principal de routage &#8220;Dijkstra&#8221;, &#8220;A-Star&#8221; et &#8220;Shooting-Star&#8221;. À la fin de ces travaux ratiques vous aurez acquis une bonne compréhension de comment utiliser pgRouting et comment préparer vos données de réseau.</p>
+<p>Pour apprendre comment utiliser la liste des résultats afin de les affichées sur une carte, nous allons contruire une interface graphique de base avec GeoExt. Nous avons écouté les remarques qui avaient été faites l&#8217;an dernier et voulons vous guider pour les étapes de bases nécessaires à la mise en ligne d&#8217;une application de routage. Notre but est de faire cei de la manières la plus simple possible, et de montrer qu&#8217;il n&#8217;est pas difficile d&#8217;intégrer cela avec les autres outils OpenSource FOSS4G. Pour cette raison, nuos avons selectionné GeoExt, qui est une librairies JavaScript fournissant les éléments de base pour créer des application de web-mappping basées sur OpenLayers et Ext.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<ul class="last simple">
+<li>Niveau requis : intermédiaire</li>
+<li>Connaissances requises : SQL (PostgreSQL, PostGIS), Javascript, HTML</li>
+<li>Matériel : ces travaux pratiques utiliseront le LiveDVD de l&#8217;OSGeo.</li>
+</ul>
+</div>
+<p class="rubric">Presenter</p>
+<ul class="simple">
+<li><em>Daniel Kastl</em> est le fondateur et le directeur de l&#8217;entreprise <a class="reference external" href="http://georepublic.de">Georepublic</a> et travail en Alemagne et au Japon. Il modère et pormeut la communauté pgRouting et en assure le développement depuis 5 ans, il est un actif contributeur de la communauté OSM au Japon.</li>
+<li><em>Frédéric Junod</em> travail au bureau Suisse de l&#8217;entreprise <a class="reference external" href="http://www.camptocamp.com">Camptocamp</a> depuis environ 5 ans. Il est développeur actif de nombreux projets OpenSource depuis le navigateur (GeoExt, OpenLayers) jusqu&#8217;au monde serveur (MapFish, Shapely, TileCache) il est membre du commité de pilotage de pgRouting.</li>
+</ul>
+<p>Daniel et Frédéric sont les auteurs des travaxu pratiques pgRouting précédents, qui ont eut lieu au FOSS4G au Canada, en Afrique du Sud, en Espagne et dans des conférences locales au Japon.</p>
+<p class="rubric">License</p>
+<p>Ce travail est ditribué sous licence <a class="reference external" href="http://creativecommons.org/licenses/by-sa/3.0/">Creative Commons Attribution-Share Alike 3.0 License</a>.</p>
+<img alt="../_images/license.png" src="../_images/license.png" />
+<p class="rubric">Support</p>
+<img alt="Camptocamp" src="../_images/camptocamp.png" />
+<p><a class="reference external" href="http://www.camptocamp.com">Camptocamp</a></p>
+<img alt="Georepublic" src="../_images/georepublic.png" />
+<p><a class="reference external" href="http://georepublic.de">Georepublic</a></p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/pgrouting.png" alt="Logo"/>
+            </a></p>
+  <h4>Sujet précédent</h4>
+  <p class="topless"><a href="../index.html"
+                        title="Chapitre précédent">pgRouting Workshop Manual</a></p>
+  <h4>Sujet suivant</h4>
+  <p class="topless"><a href="about.html"
+                        title="Chapitre suivant">2. À propos</a></p>
+    
+<div id="searchbox" style="display: none">
+  <h3>Recherche rapide</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Saisissez un mot clef ou un nom de module, classe ou fonction.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+    <h3>License</h3>
+    <p style="font-size: 90%; margin-top:2px;">Ce travail est distribué sous licence <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/">Creative Commons Attribution-Share Alike 3.0 License</a>.</p>
+    <p style="margin:0;"><a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a></p>
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="about.html" title="2. À propos"
+             >suivant</a></li>
+        <li class="right" >
+          <a href="../index.html" title="pgRouting Workshop Manual"
+             >précédent</a> |</li>
+        <li><a href="../index.html">Travaux pratiques - Routage FOSS4G avec les outils de pgRouting, le reseau routier d&#39;OpenStreetMap et GeoExt</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010-2011 Daniel Kastl, Frédéric Junod.
+      Mis à jour le Apr 02, 2012.
+    </div>
+  </body>
+</html>

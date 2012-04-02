@@ -1,0 +1,451 @@
+
+<style>
+	.toctree-wrapper {
+		-webkit-column-count: 2;
+		-moz-column-count: 2;
+		column-count: 2;
+	}
+</style>
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>6. Plus courts chemins &mdash; Travaux pratiques - Routage FOSS4G avec les outils de pgRouting, le reseau routier d&#39;OpenStreetMap et GeoExt</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="top" title="Travaux pratiques - Routage FOSS4G avec les outils de pgRouting, le reseau routier d&#39;OpenStreetMap et GeoExt" href="../index.html" />
+    <link rel="next" title="7. Requêtes de routage avancées" href="advanced.html" />
+    <link rel="prev" title="5. Création de la topologie du réseau" href="topology.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="advanced.html" title="7. Requêtes de routage avancées"
+             accesskey="N">suivant</a></li>
+        <li class="right" >
+          <a href="topology.html" title="5. Création de la topologie du réseau"
+             accesskey="P">précédent</a> |</li>
+        <li><a href="../index.html">Travaux pratiques - Routage FOSS4G avec les outils de pgRouting, le reseau routier d&#39;OpenStreetMap et GeoExt</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="plus-courts-chemins">
+<h1>6. Plus courts chemins<a class="headerlink" href="#plus-courts-chemins" title="Lien permanent vers ce titre">¶</a></h1>
+<p>pgRouting été initialement appelé <em>pgDijkstra</em>, puisque il implémentait seulement la recherche de plus court chemin à l&#8217;aide de l&#8217;agorithme de <em>Dijkstra</em>. Plus tard, d&#8217;uatres fonctions se sont ajoutées et la bibliotèque fut renommée.</p>
+<img alt="../_images/route.png" class="align-center" src="../_images/route.png" style="width: 250pt;" />
+<p>Ce chapitre explique les trois différents algorithmes et les attributs nécessaires.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Si vous lancez l&#8217;outils <a class="reference internal" href="osm2pgrouting.html"><em>osm2pgrouting</em></a> pour importer des données <em>OpenStreetMap</em>, la table des chemins (<tt class="docutils literal"><span class="pre">ways</span></tt>) contient déjà tout les attributs nécessaires pour utiliser les fonctions de recherche de plus court chemins. Au contraire, la table <tt class="docutils literal"><span class="pre">ways</span></tt> de la base de données <tt class="docutils literal"><span class="pre">pgrouting-workshop</span></tt> du <a class="reference internal" href="topology.html"><em>chapitre précédent</em></a> manque d&#8217;un certain nombre d&#8217;attributs, qui sont présentés dans ce chapitre dans les <strong>Prérequis</strong>.</p>
+</div>
+<div class="section" id="dijkstra">
+<h2>6.1. Dijkstra<a class="headerlink" href="#dijkstra" title="Lien permanent vers ce titre">¶</a></h2>
+<p>L&#8217;algorithme de Dijkstraa été la première implémentation disponible dans pgRouting. Il ne nécessite pas d&#8217;autre attributs que les champs <tt class="docutils literal"><span class="pre">source</span></tt> et <tt class="docutils literal"><span class="pre">target</span></tt>, les attributs <tt class="docutils literal"><span class="pre">id</span></tt> et <tt class="docutils literal"><span class="pre">cost</span></tt>. Il peut être utilisé sur des graphes orientés ou non. Vous pouvez spécifier que votre réseau à un coût de <tt class="docutils literal"><span class="pre">parcours</span> <span class="pre">inverse</span></tt> (<tt class="docutils literal"><span class="pre">reverse</span> <span class="pre">cost</span></tt>) ou non.</p>
+<p class="rubric">Prérequis</p>
+<p>Pour être en mesure d&#8217;utiliser un coût de parcuors invers, vous devez ajouter une colonne de coût. Nous pouvons affecter la longuer au coût de parcours inverse.</p>
+<div class="highlight-sql"><div class="highlight"><pre><span class="k">ALTER</span> <span class="k">TABLE</span> <span class="n">ways</span> <span class="k">ADD</span> <span class="k">COLUMN</span> <span class="n">reverse_cost</span> <span class="n">double</span> <span class="k">precision</span><span class="p">;</span>
+<span class="k">UPDATE</span> <span class="n">ways</span> <span class="k">SET</span> <span class="n">reverse_cost</span> <span class="o">=</span> <span class="k">length</span><span class="p">;</span>
+</pre></div>
+</div>
+<p class="rubric">Fonction avec paramètres</p>
+<div class="highlight-sql"><div class="highlight"><pre><span class="n">shortest_path</span><span class="p">(</span> <span class="k">sql</span> <span class="nb">text</span><span class="p">,</span>
+                   <span class="n">source_id</span> <span class="nb">integer</span><span class="p">,</span>
+                   <span class="n">target_id</span> <span class="nb">integer</span><span class="p">,</span>
+                   <span class="n">directed</span> <span class="nb">boolean</span><span class="p">,</span>
+                   <span class="n">has_reverse_cost</span> <span class="nb">boolean</span> <span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<ul class="last simple">
+<li>Les identifiant pour source et target sont les identifiant des noeuds.</li>
+<li>Graphes non-orientés (&#8220;directed=false&#8221;) implique que le paramètre &#8220;has_reverse_cost&#8221; est ignoré</li>
+</ul>
+</div>
+<div class="section" id="bases">
+<h3>6.1.1. Bases<a class="headerlink" href="#bases" title="Lien permanent vers ce titre">¶</a></h3>
+<p>Chaque algorithme a une fonction de <em>base</em>.</p>
+<div class="highlight-sql"><div class="highlight"><pre><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">shortest_path</span><span class="p">(</span><span class="s1">&#39;</span>
+<span class="s1">                SELECT gid as id,</span>
+<span class="s1">                         source::integer,</span>
+<span class="s1">                         target::integer,</span>
+<span class="s1">                         length::double precision as cost</span>
+<span class="s1">                        FROM ways&#39;</span><span class="p">,</span>
+                <span class="mi">5700</span><span class="p">,</span> <span class="mi">6733</span><span class="p">,</span> <span class="k">false</span><span class="p">,</span> <span class="k">false</span><span class="p">);</span>
+</pre></div>
+</div>
+<div class="highlight-sql"><div class="highlight"><pre> <span class="n">vertex_id</span> <span class="o">|</span> <span class="n">edge_id</span> <span class="o">|</span>        <span class="n">cost</span>
+<span class="c1">-----------+---------+---------------------</span>
+      <span class="mi">5700</span> <span class="o">|</span>    <span class="mi">6585</span> <span class="o">|</span>   <span class="mi">0</span><span class="p">.</span><span class="mi">175725539559539</span>
+      <span class="mi">5701</span> <span class="o">|</span>   <span class="mi">18947</span> <span class="o">|</span>   <span class="mi">0</span><span class="p">.</span><span class="mi">178145491343884</span>
+      <span class="mi">2633</span> <span class="o">|</span>   <span class="mi">18948</span> <span class="o">|</span>   <span class="mi">0</span><span class="p">.</span><span class="mi">177501253416424</span>
+       <span class="p">...</span> <span class="o">|</span>     <span class="p">...</span> <span class="o">|</span>                 <span class="p">...</span>
+      <span class="mi">6733</span> <span class="o">|</span>      <span class="o">-</span><span class="mi">1</span> <span class="o">|</span>                   <span class="mi">0</span>
+ <span class="p">(</span><span class="mi">38</span> <span class="k">rows</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="enveloppe">
+<h3>6.1.2. Enveloppe<a class="headerlink" href="#enveloppe" title="Lien permanent vers ce titre">¶</a></h3>
+<p class="rubric">Enveloppe SANS limite d&#8217;étendue</p>
+<p>les fonctions enveloppes sont des fonctions qui étendent les fonctions de bases en y ajoutant des transformations, ajoutant des limites de l&#8217;étendue géograhpique de la recherhe, etc.. Les enveloppes peuvent changer le format et l&#8217;ordre des résultats. Il affectent aussi automatiquement certains paramètre et rend l&#8217;utilisation de pgRouting encore plsu simple.</p>
+<div class="highlight-sql"><div class="highlight"><pre><span class="k">SELECT</span> <span class="n">gid</span><span class="p">,</span> <span class="n">AsText</span><span class="p">(</span><span class="n">the_geom</span><span class="p">)</span> <span class="k">AS</span> <span class="n">the_geom</span>
+        <span class="k">FROM</span> <span class="n">dijkstra_sp</span><span class="p">(</span><span class="s1">&#39;ways&#39;</span><span class="p">,</span> <span class="mi">5700</span><span class="p">,</span> <span class="mi">6733</span><span class="p">);</span>
+</pre></div>
+</div>
+<div class="highlight-sql"><div class="highlight"><pre>  <span class="n">gid</span>   <span class="o">|</span>                              <span class="n">the_geom</span>
+<span class="c1">--------+---------------------------------------------------------------</span>
+   <span class="mi">5534</span> <span class="o">|</span> <span class="n">MULTILINESTRING</span><span class="p">((</span><span class="o">-</span><span class="mi">104</span><span class="p">.</span><span class="mi">9993415</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7423284</span><span class="p">,</span> <span class="p">...</span> <span class="p">,</span><span class="o">-</span><span class="mi">104</span><span class="p">.</span><span class="mi">9999815</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7444843</span><span class="p">))</span>
+   <span class="mi">5535</span> <span class="o">|</span> <span class="n">MULTILINESTRING</span><span class="p">((</span><span class="o">-</span><span class="mi">104</span><span class="p">.</span><span class="mi">9999815</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7444843</span><span class="p">,</span> <span class="p">...</span> <span class="p">,</span><span class="o">-</span><span class="mi">105</span><span class="p">.</span><span class="mi">0001355</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7457581</span><span class="p">))</span>
+   <span class="mi">5536</span> <span class="o">|</span> <span class="n">MULTILINESTRING</span><span class="p">((</span><span class="o">-</span><span class="mi">105</span><span class="p">.</span><span class="mi">0001355</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7457581</span><span class="p">,</span><span class="o">-</span><span class="mi">105</span><span class="p">.</span><span class="mi">0002133</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7459024</span><span class="p">))</span>
+    <span class="p">...</span> <span class="o">|</span> <span class="p">...</span>
+  <span class="mi">19914</span> <span class="o">|</span> <span class="n">MULTILINESTRING</span><span class="p">((</span><span class="o">-</span><span class="mi">104</span><span class="p">.</span><span class="mi">9981408</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7320938</span><span class="p">,</span><span class="o">-</span><span class="mi">104</span><span class="p">.</span><span class="mi">9981194</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7305074</span><span class="p">))</span>
+<span class="p">(</span><span class="mi">37</span> <span class="k">rows</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>Il est possible de visualiser le chemin dans QGIS. Cela fonctionne pour la requête de recherche du plus court chemin qui retourne une colonne géométrique.</p>
+<ul class="simple">
+<li>Créer la connexion à la base de données et ajoutez la table route comme couche de fond.</li>
+<li>Ajoutez une autre couche de la table &#8220;ways&#8221; mais selectionnez l&#8217;option <tt class="docutils literal"><span class="pre">Build</span> <span class="pre">query</span></tt> avant de l&#8217;ajouter.</li>
+<li>Saissez <tt class="docutils literal"><span class="pre">&quot;gid&quot;</span>&nbsp; <span class="pre">IN</span> <span class="pre">(</span> <span class="pre">SELECT</span> <span class="pre">gid</span> <span class="pre">FROM</span> <span class="pre">dijkstra_sp('ways',5700,6733))</span></tt> dans le champ <strong>SQL where clause</strong>.</li>
+</ul>
+<p class="last"><tt class="docutils literal"><span class="pre">SQL</span> <span class="pre">query</span></tt> peut aussi être sélectionné depuis le menu contextuel de la couche.</p>
+</div>
+<p class="rubric">Enveloppe AVEC une étendue limite</p>
+<p>Vous pouvez limiter votre recherche à une zone précise en ajoutant un cadre limite. Cela améliorera les performances tout spécialement pour les réseaux volumineux.</p>
+<div class="highlight-sql"><div class="highlight"><pre><span class="k">SELECT</span> <span class="n">gid</span><span class="p">,</span> <span class="n">AsText</span><span class="p">(</span><span class="n">the_geom</span><span class="p">)</span> <span class="k">AS</span> <span class="n">the_geom</span>
+        <span class="k">FROM</span> <span class="n">dijkstra_sp_delta</span><span class="p">(</span><span class="s1">&#39;ways&#39;</span><span class="p">,</span> <span class="mi">5700</span><span class="p">,</span> <span class="mi">6733</span><span class="p">,</span> <span class="mi">0</span><span class="p">.</span><span class="mi">1</span><span class="p">);</span>
+</pre></div>
+</div>
+<div class="highlight-sql"><div class="highlight"><pre>  <span class="n">gid</span>   <span class="o">|</span>                              <span class="n">the_geom</span>
+<span class="c1">--------+---------------------------------------------------------------</span>
+   <span class="mi">5534</span> <span class="o">|</span> <span class="n">MULTILINESTRING</span><span class="p">((</span><span class="o">-</span><span class="mi">104</span><span class="p">.</span><span class="mi">9993415</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7423284</span><span class="p">,</span> <span class="p">...</span> <span class="p">,</span><span class="o">-</span><span class="mi">104</span><span class="p">.</span><span class="mi">9999815</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7444843</span><span class="p">))</span>
+   <span class="mi">5535</span> <span class="o">|</span> <span class="n">MULTILINESTRING</span><span class="p">((</span><span class="o">-</span><span class="mi">104</span><span class="p">.</span><span class="mi">9999815</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7444843</span><span class="p">,</span> <span class="p">...</span> <span class="p">,</span><span class="o">-</span><span class="mi">105</span><span class="p">.</span><span class="mi">0001355</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7457581</span><span class="p">))</span>
+   <span class="mi">5536</span> <span class="o">|</span> <span class="n">MULTILINESTRING</span><span class="p">((</span><span class="o">-</span><span class="mi">105</span><span class="p">.</span><span class="mi">0001355</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7457581</span><span class="p">,</span><span class="o">-</span><span class="mi">105</span><span class="p">.</span><span class="mi">0002133</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7459024</span><span class="p">))</span>
+    <span class="p">...</span> <span class="o">|</span> <span class="p">...</span>
+  <span class="mi">19914</span> <span class="o">|</span> <span class="n">MULTILINESTRING</span><span class="p">((</span><span class="o">-</span><span class="mi">104</span><span class="p">.</span><span class="mi">9981408</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7320938</span><span class="p">,</span><span class="o">-</span><span class="mi">104</span><span class="p">.</span><span class="mi">9981194</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7305074</span><span class="p">))</span>
+<span class="p">(</span><span class="mi">37</span> <span class="k">rows</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">La projection des données OSM est en &#8220;degrés&#8221;, donc nous définirons un cadre limite contenant le point de départ et celui d&#8217;arrivée plus une zone tampon de <tt class="docutils literal"><span class="pre">0.1</span></tt> degrés par exemple.</p>
+</div>
+</div>
+</div>
+<div class="section" id="a-etoile">
+<h2>6.2. A-Étoile<a class="headerlink" href="#a-etoile" title="Lien permanent vers ce titre">¶</a></h2>
+<p>L&#8217;algortihme A-Étoile est un autre algrithme bien connu. Il ajoute l&#8217;information de la position géographique du début et la fin de chaque tronçon. Cela permet une recherche privilégiant les tronçons proches du point d&#8217;arrivée de la recherche.</p>
+<p class="rubric">Prérequis</p>
+<p>Pour A-* vous avez besoin de préparer votre table de réseau et d&#8217;y ajouter les colonnes latitute/longitude (<tt class="docutils literal"><span class="pre">x1</span></tt>, <tt class="docutils literal"><span class="pre">y1</span></tt> et <tt class="docutils literal"><span class="pre">x2</span></tt>, <tt class="docutils literal"><span class="pre">y2</span></tt>) et de calculer leur valeurs.</p>
+<div class="highlight-sql"><div class="highlight"><pre><span class="k">ALTER</span> <span class="k">TABLE</span> <span class="n">ways</span> <span class="k">ADD</span> <span class="k">COLUMN</span> <span class="n">x1</span> <span class="n">double</span> <span class="k">precision</span><span class="p">;</span>
+<span class="k">ALTER</span> <span class="k">TABLE</span> <span class="n">ways</span> <span class="k">ADD</span> <span class="k">COLUMN</span> <span class="n">y1</span> <span class="n">double</span> <span class="k">precision</span><span class="p">;</span>
+<span class="k">ALTER</span> <span class="k">TABLE</span> <span class="n">ways</span> <span class="k">ADD</span> <span class="k">COLUMN</span> <span class="n">x2</span> <span class="n">double</span> <span class="k">precision</span><span class="p">;</span>
+<span class="k">ALTER</span> <span class="k">TABLE</span> <span class="n">ways</span> <span class="k">ADD</span> <span class="k">COLUMN</span> <span class="n">y2</span> <span class="n">double</span> <span class="k">precision</span><span class="p">;</span>
+
+<span class="k">UPDATE</span> <span class="n">ways</span> <span class="k">SET</span> <span class="n">x1</span> <span class="o">=</span> <span class="n">x</span><span class="p">(</span><span class="n">ST_startpoint</span><span class="p">(</span><span class="n">the_geom</span><span class="p">));</span>
+<span class="k">UPDATE</span> <span class="n">ways</span> <span class="k">SET</span> <span class="n">y1</span> <span class="o">=</span> <span class="n">y</span><span class="p">(</span><span class="n">ST_startpoint</span><span class="p">(</span><span class="n">the_geom</span><span class="p">));</span>
+
+<span class="k">UPDATE</span> <span class="n">ways</span> <span class="k">SET</span> <span class="n">x2</span> <span class="o">=</span> <span class="n">x</span><span class="p">(</span><span class="n">ST_endpoint</span><span class="p">(</span><span class="n">the_geom</span><span class="p">));</span>
+<span class="k">UPDATE</span> <span class="n">ways</span> <span class="k">SET</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">y</span><span class="p">(</span><span class="n">ST_endpoint</span><span class="p">(</span><span class="n">the_geom</span><span class="p">));</span>
+
+<span class="k">UPDATE</span> <span class="n">ways</span> <span class="k">SET</span> <span class="n">x1</span> <span class="o">=</span> <span class="n">x</span><span class="p">(</span><span class="n">ST_PointN</span><span class="p">(</span><span class="n">the_geom</span><span class="p">,</span> <span class="mi">1</span><span class="p">));</span>
+<span class="k">UPDATE</span> <span class="n">ways</span> <span class="k">SET</span> <span class="n">y1</span> <span class="o">=</span> <span class="n">y</span><span class="p">(</span><span class="n">ST_PointN</span><span class="p">(</span><span class="n">the_geom</span><span class="p">,</span> <span class="mi">1</span><span class="p">));</span>
+
+<span class="k">UPDATE</span> <span class="n">ways</span> <span class="k">SET</span> <span class="n">x2</span> <span class="o">=</span> <span class="n">x</span><span class="p">(</span><span class="n">ST_PointN</span><span class="p">(</span><span class="n">the_geom</span><span class="p">,</span> <span class="n">ST_NumPoints</span><span class="p">(</span><span class="n">the_geom</span><span class="p">)));</span>
+<span class="k">UPDATE</span> <span class="n">ways</span> <span class="k">SET</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">y</span><span class="p">(</span><span class="n">ST_PointN</span><span class="p">(</span><span class="n">the_geom</span><span class="p">,</span> <span class="n">ST_NumPoints</span><span class="p">(</span><span class="n">the_geom</span><span class="p">)));</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">La fonction <tt class="docutils literal"><span class="pre">endpoint()</span></tt> ne fonctionne pas avec certaines versions de PostgresQL (par exemple les version 8.2.5 et 8.1.9). Un moyen de résoudre ce problème consiste à utiliser la fonction <tt class="docutils literal"><span class="pre">PointN()</span></tt> à la place:</p>
+</div>
+<p class="rubric">Fonction avec paramètres</p>
+<p>La fonction de recherche de plus court chemin A-* est très semblable à la fonction Dijkstra, bien qu&#8217;elle préfère les tronçons qui sont plus proche du point d&#8217;arrivée de la recherche. Les heuristiques de cette recherche sont prédéfinis, donc vous aurez besoin de recompiler pgRouting si vous souhaitez modifier ces heuristiques.</p>
+<div class="highlight-sql"><div class="highlight"><pre><span class="n">shortest_path_astar</span><span class="p">(</span> <span class="k">sql</span> <span class="nb">text</span><span class="p">,</span>
+                   <span class="n">source_id</span> <span class="nb">integer</span><span class="p">,</span>
+                   <span class="n">target_id</span> <span class="nb">integer</span><span class="p">,</span>
+                   <span class="n">directed</span> <span class="nb">boolean</span><span class="p">,</span>
+                   <span class="n">has_reverse_cost</span> <span class="nb">boolean</span> <span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<ul class="last simple">
+<li>Les identifiants source et target sont les identifiant des sommets IDs.</li>
+<li>Graphes non-orienté (&#8220;directed=false&#8221;) ne prennent pas en compte le paramètre &#8220;has_reverse_cost&#8221;</li>
+</ul>
+</div>
+<div class="section" id="id1">
+<h3>6.2.1. Bases<a class="headerlink" href="#id1" title="Lien permanent vers ce titre">¶</a></h3>
+<div class="highlight-sql"><div class="highlight"><pre><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">shortest_path_astar</span><span class="p">(</span><span class="s1">&#39;</span>
+<span class="s1">                SELECT gid as id,</span>
+<span class="s1">                         source::integer,</span>
+<span class="s1">                         target::integer,</span>
+<span class="s1">                         length::double precision as cost,</span>
+<span class="s1">                         x1, y1, x2, y2</span>
+<span class="s1">                        FROM ways&#39;</span><span class="p">,</span>
+                <span class="mi">5700</span><span class="p">,</span> <span class="mi">6733</span><span class="p">,</span> <span class="k">false</span><span class="p">,</span> <span class="k">false</span><span class="p">);</span>
+</pre></div>
+</div>
+<div class="highlight-sql"><div class="highlight"><pre> <span class="n">vertex_id</span> <span class="o">|</span> <span class="n">edge_id</span> <span class="o">|</span>        <span class="n">cost</span>
+<span class="c1">-----------+---------+---------------------</span>
+      <span class="mi">5700</span> <span class="o">|</span>    <span class="mi">6585</span> <span class="o">|</span>   <span class="mi">0</span><span class="p">.</span><span class="mi">175725539559539</span>
+      <span class="mi">5701</span> <span class="o">|</span>   <span class="mi">18947</span> <span class="o">|</span>   <span class="mi">0</span><span class="p">.</span><span class="mi">178145491343884</span>
+      <span class="mi">2633</span> <span class="o">|</span>   <span class="mi">18948</span> <span class="o">|</span>   <span class="mi">0</span><span class="p">.</span><span class="mi">177501253416424</span>
+       <span class="p">...</span> <span class="o">|</span>     <span class="p">...</span> <span class="o">|</span>                 <span class="p">...</span>
+      <span class="mi">6733</span> <span class="o">|</span>      <span class="o">-</span><span class="mi">1</span> <span class="o">|</span>                   <span class="mi">0</span>
+ <span class="p">(</span><span class="mi">38</span> <span class="k">rows</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id2">
+<h3>6.2.2. Enveloppe<a class="headerlink" href="#id2" title="Lien permanent vers ce titre">¶</a></h3>
+<p class="rubric">Fonction envelopper AVEC cadre limite</p>
+<div class="highlight-sql"><div class="highlight"><pre><span class="k">SELECT</span> <span class="n">gid</span><span class="p">,</span> <span class="n">AsText</span><span class="p">(</span><span class="n">the_geom</span><span class="p">)</span> <span class="k">AS</span> <span class="n">the_geom</span>
+        <span class="k">FROM</span> <span class="n">astar_sp_delta</span><span class="p">(</span><span class="s1">&#39;ways&#39;</span><span class="p">,</span> <span class="mi">5700</span><span class="p">,</span> <span class="mi">6733</span><span class="p">,</span> <span class="mi">0</span><span class="p">.</span><span class="mi">1</span><span class="p">);</span>
+</pre></div>
+</div>
+<div class="highlight-sql"><div class="highlight"><pre>  <span class="n">gid</span>   <span class="o">|</span>                              <span class="n">the_geom</span>
+<span class="c1">--------+---------------------------------------------------------------</span>
+   <span class="mi">5534</span> <span class="o">|</span> <span class="n">MULTILINESTRING</span><span class="p">((</span><span class="o">-</span><span class="mi">104</span><span class="p">.</span><span class="mi">9993415</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7423284</span><span class="p">,</span> <span class="p">...</span> <span class="p">,</span><span class="o">-</span><span class="mi">104</span><span class="p">.</span><span class="mi">9999815</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7444843</span><span class="p">))</span>
+   <span class="mi">5535</span> <span class="o">|</span> <span class="n">MULTILINESTRING</span><span class="p">((</span><span class="o">-</span><span class="mi">104</span><span class="p">.</span><span class="mi">9999815</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7444843</span><span class="p">,</span> <span class="p">...</span> <span class="p">,</span><span class="o">-</span><span class="mi">105</span><span class="p">.</span><span class="mi">0001355</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7457581</span><span class="p">))</span>
+   <span class="mi">5536</span> <span class="o">|</span> <span class="n">MULTILINESTRING</span><span class="p">((</span><span class="o">-</span><span class="mi">105</span><span class="p">.</span><span class="mi">0001355</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7457581</span><span class="p">,</span><span class="o">-</span><span class="mi">105</span><span class="p">.</span><span class="mi">0002133</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7459024</span><span class="p">))</span>
+    <span class="p">...</span> <span class="o">|</span> <span class="p">...</span>
+  <span class="mi">19914</span> <span class="o">|</span> <span class="n">MULTILINESTRING</span><span class="p">((</span><span class="o">-</span><span class="mi">104</span><span class="p">.</span><span class="mi">9981408</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7320938</span><span class="p">,</span><span class="o">-</span><span class="mi">104</span><span class="p">.</span><span class="mi">9981194</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7305074</span><span class="p">))</span>
+<span class="p">(</span><span class="mi">37</span> <span class="k">rows</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<ul class="last simple">
+<li>Il n&#8217;y a pas actuellement de fonction pour a-* sans cadre limite, étant donnée que le cadre limite permet d&#8217;améliorer grandement les performances. Si vous n&#8217;avez pas besoin de cadre limite, Dijkstra sera suffisant.</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="section" id="shooting-star">
+<h2>6.3. Shooting-Star<a class="headerlink" href="#shooting-star" title="Lien permanent vers ce titre">¶</a></h2>
+<p>L&#8217;algorithme Shooting-Star est le dernier algorithme de recherche de plus court chemin. Sa spécialité c&#8217;est qu&#8217;il recherche un parcours d&#8217;un tronçon à un autre, pas d&#8217;un sommet à un sommet comme les agorithmes de Dijkstra et A-Star le font. Cela rend possible la définition de relations entre les tronçons par exemple, et cela résoud certains problèmes liés aux recherches d&#8217;un sommets à un autre comme les &#8220;tronçons parallèles&#8221;, qui ont les même sommet de début et de fin mais des coût différents.</p>
+<p class="rubric">Prérequis</p>
+<p>Pour Shooting-Star vous avez besoin de préparer votre table de réseau et d&#8217;ajouter les colonnes <tt class="docutils literal"><span class="pre">rule</span></tt> et <tt class="docutils literal"><span class="pre">to_cost</span></tt>. Come l&#8217;algorithme A-* il a aussi un fonction heuristique, qui favorise les tronçons plus proche du point d&#8217;arrivée.which prefers links closer to the target of the search.</p>
+<div class="highlight-sql"><div class="highlight"><pre><span class="c1">-- Ajouter les colonnes rule et to_cost</span>
+<span class="k">ALTER</span> <span class="k">TABLE</span> <span class="n">ways</span> <span class="k">ADD</span> <span class="k">COLUMN</span> <span class="n">to_cost</span> <span class="n">double</span> <span class="k">precision</span><span class="p">;</span>
+<span class="k">ALTER</span> <span class="k">TABLE</span> <span class="n">ways</span> <span class="k">ADD</span> <span class="k">COLUMN</span> <span class="k">rule</span> <span class="nb">text</span><span class="p">;</span>
+</pre></div>
+</div>
+<p class="rubric">L&#8217;algorithme Shooting-Star introduit deux nouveaux attributs</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Attribut</strong></td>
+<td><strong>Déscription</strong></td>
+</tr>
+<tr class="row-even"><td>rule</td>
+<td>une chaine de caractères contenant une liste d&#8217;identifiants de tronçno séparés par une virgule, qui décrivent le sens giratoir (si vous venez de cet tronçon, vous pouvez rejoindre le suivant en ajoutant un coût défini dans la colonne to_cost)</td>
+</tr>
+<tr class="row-odd"><td>to_cost</td>
+<td>un coût pour passer d&#8217;un tronçon à un autre (peut être très élevé s&#8217;il est interdit de trouner vers ce tronçon ce qui est comparable au coût de parcours d&#8217;un tronçon en cas de feu de signalisation)</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Fonction avec paramètres</p>
+<div class="highlight-sql"><div class="highlight"><pre><span class="n">shortest_path_shooting_star</span><span class="p">(</span> <span class="k">sql</span> <span class="nb">text</span><span class="p">,</span>
+                   <span class="n">source_id</span> <span class="nb">integer</span><span class="p">,</span>
+                   <span class="n">target_id</span> <span class="nb">integer</span><span class="p">,</span>
+                   <span class="n">directed</span> <span class="nb">boolean</span><span class="p">,</span>
+                   <span class="n">has_reverse_cost</span> <span class="nb">boolean</span> <span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<ul class="last simple">
+<li>Identifiant du départ et de l&#8217;arrivée sont des identifiants de tronçons.</li>
+<li>Graphes non-orientés (&#8220;directed=false&#8221;) ne prennent pas en compte le paramètre &#8220;has_reverse_cost&#8221;</li>
+</ul>
+</div>
+<p>Pour décrire une interdiction de tourner :</p>
+<div class="highlight-sql"><div class="highlight"><pre> <span class="n">gid</span> <span class="o">|</span> <span class="k">source</span> <span class="o">|</span> <span class="n">target</span> <span class="o">|</span> <span class="n">cost</span> <span class="o">|</span> <span class="n">x1</span> <span class="o">|</span> <span class="n">y1</span> <span class="o">|</span> <span class="n">x2</span> <span class="o">|</span> <span class="n">y2</span> <span class="o">|</span> <span class="n">to_cost</span> <span class="o">|</span> <span class="k">rule</span>
+<span class="c1">-----+--------+--------+------+----+----+----+----+---------+------</span>
+  <span class="mi">12</span> <span class="o">|</span>      <span class="mi">3</span> <span class="o">|</span>     <span class="mi">10</span> <span class="o">|</span>    <span class="mi">2</span> <span class="o">|</span>  <span class="mi">4</span> <span class="o">|</span>  <span class="mi">3</span> <span class="o">|</span>  <span class="mi">4</span> <span class="o">|</span>  <span class="mi">5</span> <span class="o">|</span>    <span class="mi">1000</span> <span class="o">|</span> <span class="mi">14</span>
+</pre></div>
+</div>
+<p>... signifie que le coût pour aller du tronçon 14 au tronçon 12 est de 1000, et</p>
+<div class="highlight-sql"><div class="highlight"><pre> <span class="n">gid</span> <span class="o">|</span> <span class="k">source</span> <span class="o">|</span> <span class="n">target</span> <span class="o">|</span> <span class="n">cost</span> <span class="o">|</span> <span class="n">x1</span> <span class="o">|</span> <span class="n">y1</span> <span class="o">|</span> <span class="n">x2</span> <span class="o">|</span> <span class="n">y2</span> <span class="o">|</span> <span class="n">to_cost</span> <span class="o">|</span> <span class="k">rule</span>
+<span class="c1">-----+--------+--------+------+----+----+----+----+---------+------</span>
+  <span class="mi">12</span> <span class="o">|</span>      <span class="mi">3</span> <span class="o">|</span>     <span class="mi">10</span> <span class="o">|</span>    <span class="mi">2</span> <span class="o">|</span>  <span class="mi">4</span> <span class="o">|</span>  <span class="mi">3</span> <span class="o">|</span>  <span class="mi">4</span> <span class="o">|</span>  <span class="mi">5</span> <span class="o">|</span>    <span class="mi">1000</span> <span class="o">|</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">4</span>
+</pre></div>
+</div>
+<p>... signifie que le coût pour aller du tronçon 14 au tronçon 12 via le tronçon 4 est de 1000.</p>
+<p>Si vous avez besoin de plusieurs restrictions pour une arrête donnée you devez ajouter plusieurs enregistrements pour ce tronçon avec un restriction particulière.</p>
+<div class="highlight-sql"><div class="highlight"><pre> <span class="n">gid</span> <span class="o">|</span> <span class="k">source</span> <span class="o">|</span> <span class="n">target</span> <span class="o">|</span> <span class="n">cost</span> <span class="o">|</span> <span class="n">x1</span> <span class="o">|</span> <span class="n">y1</span> <span class="o">|</span> <span class="n">x2</span> <span class="o">|</span> <span class="n">y2</span> <span class="o">|</span> <span class="n">to_cost</span> <span class="o">|</span> <span class="k">rule</span>
+<span class="c1">-----+--------+--------+------+----+----+----+----+---------+------</span>
+  <span class="mi">11</span> <span class="o">|</span>      <span class="mi">3</span> <span class="o">|</span>     <span class="mi">10</span> <span class="o">|</span>    <span class="mi">2</span> <span class="o">|</span>  <span class="mi">4</span> <span class="o">|</span>  <span class="mi">3</span> <span class="o">|</span>  <span class="mi">4</span> <span class="o">|</span>  <span class="mi">5</span> <span class="o">|</span>    <span class="mi">1000</span> <span class="o">|</span> <span class="mi">4</span>
+  <span class="mi">11</span> <span class="o">|</span>      <span class="mi">3</span> <span class="o">|</span>     <span class="mi">10</span> <span class="o">|</span>    <span class="mi">2</span> <span class="o">|</span>  <span class="mi">4</span> <span class="o">|</span>  <span class="mi">3</span> <span class="o">|</span>  <span class="mi">4</span> <span class="o">|</span>  <span class="mi">5</span> <span class="o">|</span>    <span class="mi">1000</span> <span class="o">|</span> <span class="mi">12</span>
+</pre></div>
+</div>
+<p>... signifie que le coût pour aller soit du tronçon  4 soit du 12 au 11 est de 1000. Et donc vous devez ordoner vos données par gid lorsque vous chargez vos données dans la fonction de recherche de plus court chemin...</p>
+<div class="section" id="id3">
+<h3>6.3.1. Bases<a class="headerlink" href="#id3" title="Lien permanent vers ce titre">¶</a></h3>
+<p>Un exemple d&#8217;utilisation de l&#8217;algorithme Shooting Star :</p>
+<div class="highlight-sql"><div class="highlight"><pre><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">shortest_path_shooting_star</span><span class="p">(</span><span class="s1">&#39;</span>
+<span class="s1">                SELECT gid as id,</span>
+<span class="s1">                         source::integer,</span>
+<span class="s1">                         target::integer,</span>
+<span class="s1">                         length::double precision as cost,</span>
+<span class="s1">                         x1, y1, x2, y2,</span>
+<span class="s1">                         rule, to_cost</span>
+<span class="s1">                        FROM ways&#39;</span><span class="p">,</span>
+                <span class="mi">6585</span><span class="p">,</span> <span class="mi">8247</span><span class="p">,</span> <span class="k">false</span><span class="p">,</span> <span class="k">false</span><span class="p">);</span>
+</pre></div>
+</div>
+<div class="highlight-sql"><div class="highlight"><pre> <span class="n">vertex_id</span> <span class="o">|</span> <span class="n">edge_id</span> <span class="o">|</span>        <span class="n">cost</span>
+<span class="c1">-----------+---------+---------------------</span>
+     <span class="mi">15007</span> <span class="o">|</span>    <span class="mi">6585</span> <span class="o">|</span>   <span class="mi">0</span><span class="p">.</span><span class="mi">175725539559539</span>
+     <span class="mi">15009</span> <span class="o">|</span>   <span class="mi">18947</span> <span class="o">|</span>   <span class="mi">0</span><span class="p">.</span><span class="mi">178145491343884</span>
+      <span class="mi">9254</span> <span class="o">|</span>   <span class="mi">18948</span> <span class="o">|</span>   <span class="mi">0</span><span class="p">.</span><span class="mi">177501253416424</span>
+       <span class="p">...</span> <span class="o">|</span>     <span class="p">...</span> <span class="o">|</span>   <span class="p">...</span>
+      <span class="mi">1161</span> <span class="o">|</span>    <span class="mi">8247</span> <span class="o">|</span>   <span class="mi">0</span><span class="p">.</span><span class="mi">051155648874288</span>
+ <span class="p">(</span><span class="mi">37</span> <span class="k">rows</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">L&#8217;algorithme Shooting Star calcul un chemin d&#8217;un tronçon à un autre (pas d&#8217;un sommet à un autre). La colonnes vertex_id contienr le point de départ du tronçon de la colonne edge_id.</p>
+</div>
+</div>
+<div class="section" id="envelopper">
+<h3>6.3.2. Envelopper<a class="headerlink" href="#envelopper" title="Lien permanent vers ce titre">¶</a></h3>
+<div class="highlight-sql"><div class="highlight"><pre><span class="k">SELECT</span> <span class="n">gid</span><span class="p">,</span> <span class="n">AsText</span><span class="p">(</span><span class="n">the_geom</span><span class="p">)</span> <span class="k">AS</span> <span class="n">the_geom</span>
+        <span class="k">FROM</span> <span class="n">shootingstar_sp</span><span class="p">(</span><span class="s1">&#39;ways&#39;</span><span class="p">,</span> <span class="mi">6585</span><span class="p">,</span> <span class="mi">8247</span><span class="p">,</span> <span class="mi">0</span><span class="p">.</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;length&#39;</span><span class="p">,</span> <span class="k">true</span><span class="p">,</span> <span class="k">true</span><span class="p">);</span>
+</pre></div>
+</div>
+<div class="highlight-sql"><div class="highlight"><pre>  <span class="n">gid</span>   <span class="o">|</span>                              <span class="n">the_geom</span>
+<span class="c1">--------+---------------------------------------------------------------</span>
+   <span class="mi">6585</span> <span class="o">|</span> <span class="n">MULTILINESTRING</span><span class="p">((</span><span class="o">-</span><span class="mi">104</span><span class="p">.</span><span class="mi">9975345</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7193508</span><span class="p">,</span><span class="o">-</span><span class="mi">104</span><span class="p">.</span><span class="mi">9975487</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7209311</span><span class="p">))</span>
+  <span class="mi">18947</span> <span class="o">|</span> <span class="n">MULTILINESTRING</span><span class="p">((</span><span class="o">-</span><span class="mi">104</span><span class="p">.</span><span class="mi">9975487</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7209311</span><span class="p">,</span><span class="o">-</span><span class="mi">104</span><span class="p">.</span><span class="mi">9975509</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7225332</span><span class="p">))</span>
+  <span class="mi">18948</span> <span class="o">|</span> <span class="n">MULTILINESTRING</span><span class="p">((</span><span class="o">-</span><span class="mi">104</span><span class="p">.</span><span class="mi">9975509</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7225332</span><span class="p">,</span><span class="o">-</span><span class="mi">104</span><span class="p">.</span><span class="mi">9975447</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7241295</span><span class="p">))</span>
+    <span class="p">...</span> <span class="o">|</span> <span class="p">...</span>
+   <span class="mi">8247</span> <span class="o">|</span> <span class="n">MULTILINESTRING</span><span class="p">((</span><span class="o">-</span><span class="mi">104</span><span class="p">.</span><span class="mi">9978555</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7495627</span><span class="p">,</span><span class="o">-</span><span class="mi">104</span><span class="p">.</span><span class="mi">9982781</span> <span class="mi">39</span><span class="p">.</span><span class="mi">7498884</span><span class="p">))</span>
+<span class="p">(</span><span class="mi">37</span> <span class="k">rows</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Il n&#8217;y a actuellement pas de fonction enveloppe pour Shooting-Star sans cadre limite, puisque le cadre limite améliore grandement les performances.</p>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/pgrouting.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../index.html">Table des matières</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">6. Plus courts chemins</a><ul>
+<li><a class="reference internal" href="#dijkstra">6.1. Dijkstra</a><ul>
+<li><a class="reference internal" href="#bases">6.1.1. Bases</a></li>
+<li><a class="reference internal" href="#enveloppe">6.1.2. Enveloppe</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#a-etoile">6.2. A-Étoile</a><ul>
+<li><a class="reference internal" href="#id1">6.2.1. Bases</a></li>
+<li><a class="reference internal" href="#id2">6.2.2. Enveloppe</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#shooting-star">6.3. Shooting-Star</a><ul>
+<li><a class="reference internal" href="#id3">6.3.1. Bases</a></li>
+<li><a class="reference internal" href="#envelopper">6.3.2. Envelopper</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Sujet précédent</h4>
+  <p class="topless"><a href="topology.html"
+                        title="Chapitre précédent">5. Création de la topologie du réseau</a></p>
+  <h4>Sujet suivant</h4>
+  <p class="topless"><a href="advanced.html"
+                        title="Chapitre suivant">7. Requêtes de routage avancées</a></p>
+    
+<div id="searchbox" style="display: none">
+  <h3>Recherche rapide</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Saisissez un mot clef ou un nom de module, classe ou fonction.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+    <h3>License</h3>
+    <p style="font-size: 90%; margin-top:2px;">Ce travail est distribué sous licence <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/">Creative Commons Attribution-Share Alike 3.0 License</a>.</p>
+    <p style="margin:0;"><a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a></p>
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="advanced.html" title="7. Requêtes de routage avancées"
+             >suivant</a></li>
+        <li class="right" >
+          <a href="topology.html" title="5. Création de la topologie du réseau"
+             >précédent</a> |</li>
+        <li><a href="../index.html">Travaux pratiques - Routage FOSS4G avec les outils de pgRouting, le reseau routier d&#39;OpenStreetMap et GeoExt</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010-2011 Daniel Kastl, Frédéric Junod.
+      Mis à jour le Apr 02, 2012.
+    </div>
+  </body>
+</html>

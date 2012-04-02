@@ -1,0 +1,313 @@
+
+<style>
+	.toctree-wrapper {
+		-webkit-column-count: 2;
+		-moz-column-count: 2;
+		column-count: 2;
+	}
+</style>
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>8. Script PHP coté serveur &mdash; Travaux pratiques - Routage FOSS4G avec les outils de pgRouting, le reseau routier d&#39;OpenStreetMap et GeoExt</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="top" title="Travaux pratiques - Routage FOSS4G avec les outils de pgRouting, le reseau routier d&#39;OpenStreetMap et GeoExt" href="../index.html" />
+    <link rel="next" title="9. Client en GeoExt" href="geoext_client.html" />
+    <link rel="prev" title="7. Requêtes de routage avancées" href="advanced.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="geoext_client.html" title="9. Client en GeoExt"
+             accesskey="N">suivant</a></li>
+        <li class="right" >
+          <a href="advanced.html" title="7. Requêtes de routage avancées"
+             accesskey="P">précédent</a> |</li>
+        <li><a href="../index.html">Travaux pratiques - Routage FOSS4G avec les outils de pgRouting, le reseau routier d&#39;OpenStreetMap et GeoExt</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="script-php-cote-serveur">
+<h1>8. Script PHP coté serveur<a class="headerlink" href="#script-php-cote-serveur" title="Lien permanent vers ce titre">¶</a></h1>
+<p>Nous utiliserons un script PHP pour exécuter les requêtes de routafe et renverons le résultat au client web.</p>
+<p>Les étapes suivantes sont nécessaires :</p>
+<ul class="simple">
+<li>Retrouver les coordonnées du point de départ et de celui d&#8217;arrivée.</li>
+<li>Trouver l&#8217;arrête la plus proche d&#8217;un point de départ ou d&#8217;arrivée.</li>
+<li>Prendre soit le noeud de début ou de fin de l&#8217;arrête  (for Dijkstra/ A-Star) ou l&#8217;arrête elle-même (Shooting-Star) comme début ou fin du parcours.</li>
+<li>Exécuter les requête de recherche de plus court chemin.</li>
+<li>Retourner le résultat de la requête en XML ou mieux encore en GeoJSON au client web.</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Pour conserver cet exemple aussi simple que possiblle et de mettre en évidence les requête de routafe, ce script PHP ne valide pas les paramètres des requêtes et ne prend pas en compte les problèmes de sécurités de PHP.</p>
+</div>
+<p>Commençons avec quelque modèles PHP et plaçon ces fichiers dans un répertoire accessible par le serveur Apache :</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="cp">&lt;?php</span>
+
+   <span class="c1">// Paramétrage de la connexion à la base de données</span>
+   <span class="nb">define</span><span class="p">(</span><span class="s2">&quot;PG_DB&quot;</span>  <span class="p">,</span> <span class="s2">&quot;routing&quot;</span><span class="p">);</span>
+   <span class="nb">define</span><span class="p">(</span><span class="s2">&quot;PG_HOST&quot;</span><span class="p">,</span> <span class="s2">&quot;localhost&quot;</span><span class="p">);</span> 
+   <span class="nb">define</span><span class="p">(</span><span class="s2">&quot;PG_USER&quot;</span><span class="p">,</span> <span class="s2">&quot;postgres&quot;</span><span class="p">);</span>
+   <span class="nb">define</span><span class="p">(</span><span class="s2">&quot;PG_PORT&quot;</span><span class="p">,</span> <span class="s2">&quot;5432&quot;</span><span class="p">);</span> 
+   <span class="nb">define</span><span class="p">(</span><span class="s2">&quot;TABLE&quot;</span><span class="p">,</span>   <span class="s2">&quot;ways&quot;</span><span class="p">);</span>
+
+   <span class="c1">// Récupérer le point de départ</span>
+   <span class="nv">$start</span> <span class="o">=</span> <span class="nb">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span><span class="nv">$_REQUEST</span><span class="p">[</span><span class="s1">&#39;startpoint&#39;</span><span class="p">]);</span>
+   <span class="nv">$startPoint</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span><span class="nv">$start</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nv">$start</span><span class="p">[</span><span class="mi">1</span><span class="p">]);</span>
+
+   <span class="c1">// Récupérer le point d&#39;arrivée</span>
+   <span class="nv">$end</span> <span class="o">=</span> <span class="nb">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span><span class="nv">$_REQUEST</span><span class="p">[</span><span class="s1">&#39;finalpoint&#39;</span><span class="p">]);</span>
+   <span class="nv">$endPoint</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span><span class="nv">$end</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nv">$end</span><span class="p">[</span><span class="mi">1</span><span class="p">]);</span>
+   
+<span class="cp">?&gt;</span><span class="x"></span>
+</pre></div>
+</div>
+<div class="section" id="l-arrete-la-plus-proche">
+<h2>8.1. L&#8217;arrête la plus proche<a class="headerlink" href="#l-arrete-la-plus-proche" title="Lien permanent vers ce titre">¶</a></h2>
+<p>Habituellement les points de départ et d&#8217;arrivée, qui sont récupérer depuis le client, n&#8217;est pas le point de départ ou d&#8217;arrivée d&#8217;un tronçon. Il est plus simple de retrouver l&#8217;arrête la plus proche que le sommet le plus proche, parce que l&#8217;algorithme &#8220;Shooting-Star&#8221; est basé sur les arrêtes. Pour les algorithmes basés sur les sommets (Dijkstra, A-Étoile) nous pouvons choisir le opint de départ ou d&#8217;arrivée de l&#8217;arrête sélectionnée.</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="cp">&lt;?php</span>
+
+   <span class="c1">// Trouver le tronçon le plus proche</span>
+   <span class="nv">$startEdge</span> <span class="o">=</span> <span class="nx">findNearestEdge</span><span class="p">(</span><span class="nv">$startPoint</span><span class="p">);</span>
+   <span class="nv">$endEdge</span>   <span class="o">=</span> <span class="nx">findNearestEdge</span><span class="p">(</span><span class="nv">$endPoint</span><span class="p">);</span>
+
+   <span class="c1">// FONCTION findNearestEdge</span>
+   <span class="k">function</span> <span class="nf">findNearestEdge</span><span class="p">(</span><span class="nv">$lonlat</span><span class="p">)</span> <span class="p">{</span>
+
+      <span class="c1">// Connexion à la base de données</span>
+      <span class="nv">$con</span> <span class="o">=</span> <span class="nb">pg_connect</span><span class="p">(</span><span class="s2">&quot;dbname=&quot;</span><span class="o">.</span><span class="nx">PG_DB</span><span class="o">.</span><span class="s2">&quot; host=&quot;</span><span class="o">.</span><span class="nx">PG_HOST</span><span class="o">.</span><span class="s2">&quot; user=&quot;</span><span class="o">.</span><span class="nx">PG_USER</span><span class="p">);</span>
+
+      <span class="nv">$sql</span> <span class="o">=</span> <span class="s2">&quot;SELECT gid, source, target, the_geom, </span>
+<span class="s2">		          distance(the_geom, GeometryFromText(</span>
+<span class="s2">	                   &#39;POINT(&quot;</span><span class="o">.</span><span class="nv">$lonlat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="nv">$lonlat</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="s2">&quot;)&#39;, 4326)) AS dist </span>
+<span class="s2">	             FROM &quot;</span><span class="o">.</span><span class="nx">TABLE</span><span class="o">.</span><span class="s2">&quot;  </span>
+<span class="s2">	             WHERE the_geom &amp;&amp; setsrid(</span>
+<span class="s2">	                   &#39;BOX3D(&quot;</span><span class="o">.</span><span class="p">(</span><span class="nv">$lonlat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mf">0.1</span><span class="p">)</span><span class="o">.</span><span class="s2">&quot; </span>
+<span class="s2">	                          &quot;</span><span class="o">.</span><span class="p">(</span><span class="nv">$lonlat</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="mf">0.1</span><span class="p">)</span><span class="o">.</span><span class="s2">&quot;, </span>
+<span class="s2">	                          &quot;</span><span class="o">.</span><span class="p">(</span><span class="nv">$lonlat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mf">0.1</span><span class="p">)</span><span class="o">.</span><span class="s2">&quot; </span>
+<span class="s2">	                          &quot;</span><span class="o">.</span><span class="p">(</span><span class="nv">$lonlat</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mf">0.1</span><span class="p">)</span><span class="o">.</span><span class="s2">&quot;)&#39;::box3d, 4326) </span>
+<span class="s2">	             ORDER BY dist LIMIT 1&quot;</span><span class="p">;</span>
+
+      <span class="nv">$query</span> <span class="o">=</span> <span class="nx">pg_query</span><span class="p">(</span><span class="nv">$con</span><span class="p">,</span><span class="nv">$sql</span><span class="p">);</span>  
+
+      <span class="nv">$edge</span><span class="p">[</span><span class="s1">&#39;gid&#39;</span><span class="p">]</span>      <span class="o">=</span> <span class="nb">pg_fetch_result</span><span class="p">(</span><span class="nv">$query</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>  
+      <span class="nv">$edge</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span>   <span class="o">=</span> <span class="nb">pg_fetch_result</span><span class="p">(</span><span class="nv">$query</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>  
+      <span class="nv">$edge</span><span class="p">[</span><span class="s1">&#39;target&#39;</span><span class="p">]</span>   <span class="o">=</span> <span class="nb">pg_fetch_result</span><span class="p">(</span><span class="nv">$query</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>  
+      <span class="nv">$edge</span><span class="p">[</span><span class="s1">&#39;the_geom&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">pg_fetch_result</span><span class="p">(</span><span class="nv">$query</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span>  
+
+      <span class="c1">// Fermer la connexion</span>
+      <span class="nb">pg_close</span><span class="p">(</span><span class="nv">$con</span><span class="p">);</span>
+
+      <span class="k">return</span> <span class="nv">$edge</span><span class="p">;</span>
+   <span class="p">}</span>
+   
+<span class="cp">?&gt;</span><span class="x"></span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="requete-de-routage">
+<h2>8.2. Requête de routage<a class="headerlink" href="#requete-de-routage" title="Lien permanent vers ce titre">¶</a></h2>
+<div class="highlight-php"><div class="highlight"><pre><span class="cp">&lt;?php</span>
+
+   <span class="c1">// Choisir un algorithme de parcours</span>
+   <span class="k">switch</span><span class="p">(</span><span class="nv">$_REQUEST</span><span class="p">[</span><span class="s1">&#39;method&#39;</span><span class="p">])</span> <span class="p">{</span>
+
+      <span class="k">case</span> <span class="s1">&#39;SPD&#39;</span> <span class="o">:</span> <span class="c1">// Shortest Path Dijkstra </span>
+
+        <span class="nv">$sql</span> <span class="o">=</span> <span class="s2">&quot;SELECT rt.gid, ST_AsGeoJSON(rt.the_geom) AS geojson, </span>
+<span class="s2">	                 length(rt.the_geom) AS length, &quot;</span><span class="o">.</span><span class="nx">TABLE</span><span class="o">.</span><span class="s2">&quot;.gid </span>
+<span class="s2">	              FROM &quot;</span><span class="o">.</span><span class="nx">TABLE</span><span class="o">.</span><span class="s2">&quot;, </span>
+<span class="s2">	                  (SELECT gid, the_geom </span>
+<span class="s2">	                      FROM dijkstra_sp_delta(</span>
+<span class="s2">	                          &#39;&quot;</span><span class="o">.</span><span class="nx">TABLE</span><span class="o">.</span><span class="s2">&quot;&#39;,</span>
+<span class="s2">	                          &quot;</span><span class="o">.</span><span class="nv">$startEdge</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span><span class="o">.</span><span class="s2">&quot;,</span>
+<span class="s2">	                          &quot;</span><span class="o">.</span><span class="nv">$endEdge</span><span class="p">[</span><span class="s1">&#39;target&#39;</span><span class="p">]</span><span class="o">.</span><span class="s2">&quot;,</span>
+<span class="s2">	                          0.1)</span>
+<span class="s2">	                   ) as rt </span>
+<span class="s2">	              WHERE &quot;</span><span class="o">.</span><span class="nx">TABLE</span><span class="o">.</span><span class="s2">&quot;.gid=rt.gid;&quot;</span><span class="p">;</span>
+        <span class="k">break</span><span class="p">;</span>
+        
+      <span class="k">case</span> <span class="s1">&#39;SPA&#39;</span> <span class="o">:</span> <span class="c1">// Shortest Path A* </span>
+
+        <span class="nv">$sql</span> <span class="o">=</span> <span class="s2">&quot;SELECT rt.gid, ST_AsGeoJSON(rt.the_geom) AS geojson, </span>
+<span class="s2">	                   length(rt.the_geom) AS length, &quot;</span><span class="o">.</span><span class="nx">TABLE</span><span class="o">.</span><span class="s2">&quot;.gid </span>
+<span class="s2">	                FROM &quot;</span><span class="o">.</span><span class="nx">TABLE</span><span class="o">.</span><span class="s2">&quot;, </span>
+<span class="s2">	                    (SELECT gid, the_geom </span>
+<span class="s2">	                        FROM astar_sp_delta(</span>
+<span class="s2">	                            &#39;&quot;</span><span class="o">.</span><span class="nx">TABLE</span><span class="o">.</span><span class="s2">&quot;&#39;,</span>
+<span class="s2">	                            &quot;</span><span class="o">.</span><span class="nv">$startEdge</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span><span class="o">.</span><span class="s2">&quot;,</span>
+<span class="s2">	                            &quot;</span><span class="o">.</span><span class="nv">$endEdge</span><span class="p">[</span><span class="s1">&#39;target&#39;</span><span class="p">]</span><span class="o">.</span><span class="s2">&quot;,</span>
+<span class="s2">	                            0.1)</span>
+<span class="s2">	                     ) as rt </span>
+<span class="s2">	                WHERE &quot;</span><span class="o">.</span><span class="nx">TABLE</span><span class="o">.</span><span class="s2">&quot;.gid=rt.gid;&quot;</span><span class="p">;</span>  
+        <span class="k">break</span><span class="p">;</span>
+
+      <span class="k">case</span> <span class="s1">&#39;SPS&#39;</span> <span class="o">:</span> <span class="c1">// Shortest Path Shooting*</span>
+
+        <span class="nv">$sql</span> <span class="o">=</span> <span class="s2">&quot;SELECT rt.gid, ST_AsGeoJSON(rt.the_geom) AS geojson, </span>
+<span class="s2">	                   length(rt.the_geom) AS length, &quot;</span><span class="o">.</span><span class="nx">TABLE</span><span class="o">.</span><span class="s2">&quot;.gid </span>
+<span class="s2">	                FROM &quot;</span><span class="o">.</span><span class="nx">TABLE</span><span class="o">.</span><span class="s2">&quot;, </span>
+<span class="s2">	                    (SELECT gid, the_geom </span>
+<span class="s2">	                        FROM shootingstar_sp(</span>
+<span class="s2">	                            &#39;&quot;</span><span class="o">.</span><span class="nx">TABLE</span><span class="o">.</span><span class="s2">&quot;&#39;,</span>
+<span class="s2">	                            &quot;</span><span class="o">.</span><span class="nv">$startEdge</span><span class="p">[</span><span class="s1">&#39;gid&#39;</span><span class="p">]</span><span class="o">.</span><span class="s2">&quot;,</span>
+<span class="s2">	                            &quot;</span><span class="o">.</span><span class="nv">$endEdge</span><span class="p">[</span><span class="s1">&#39;gid&#39;</span><span class="p">]</span><span class="o">.</span><span class="s2">&quot;,</span>
+<span class="s2">	                            0.1, &#39;length&#39;, true, true)</span>
+<span class="s2">	                     ) as rt </span>
+<span class="s2">	                WHERE &quot;</span><span class="o">.</span><span class="nx">TABLE</span><span class="o">.</span><span class="s2">&quot;.gid=rt.gid;&quot;</span><span class="p">;</span>
+        <span class="k">break</span><span class="p">;</span>   
+
+   <span class="p">}</span> <span class="c1">// fin switch</span>
+
+   <span class="c1">// Connexion à la base de données</span>
+   <span class="nv">$dbcon</span> <span class="o">=</span> <span class="nb">pg_connect</span><span class="p">(</span><span class="s2">&quot;dbname=&quot;</span><span class="o">.</span><span class="nx">PG_DB</span><span class="o">.</span><span class="s2">&quot; host=&quot;</span><span class="o">.</span><span class="nx">PG_HOST</span><span class="o">.</span><span class="s2">&quot; user=&quot;</span><span class="o">.</span><span class="nx">PG_USER</span><span class="p">);</span>
+
+   <span class="c1">// Exécuter une requête</span>
+   <span class="nv">$query</span> <span class="o">=</span> <span class="nx">pg_query</span><span class="p">(</span><span class="nv">$dbcon</span><span class="p">,</span><span class="nv">$sql</span><span class="p">);</span> 
+   
+<span class="cp">?&gt;</span><span class="x"></span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="sortie-au-format-geojson">
+<h2>8.3. Sortie au format GeoJSON<a class="headerlink" href="#sortie-au-format-geojson" title="Lien permanent vers ce titre">¶</a></h2>
+<p>OpenLayers permet l&#8217;affichage de lignes en utilisant directement des données au format GeoJSON, donc notre script retourne un objet FeatureCollection au format GeoJSON :</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="cp">&lt;?php</span>
+
+   <span class="c1">// Renvoit un chemin au format GeoJSON</span>
+   <span class="nv">$geojson</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span>
+      <span class="s1">&#39;type&#39;</span>      <span class="o">=&gt;</span> <span class="s1">&#39;FeatureCollection&#39;</span><span class="p">,</span>
+      <span class="s1">&#39;features&#39;</span>  <span class="o">=&gt;</span> <span class="k">array</span><span class="p">()</span>
+   <span class="p">);</span> 
+  
+   <span class="c1">// Ajouter un tronçon au tableau GeoJSON</span>
+   <span class="k">while</span><span class="p">(</span><span class="nv">$edge</span><span class="o">=</span><span class="nb">pg_fetch_assoc</span><span class="p">(</span><span class="nv">$query</span><span class="p">))</span> <span class="p">{</span>  
+
+      <span class="nv">$feature</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span>
+         <span class="s1">&#39;type&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Feature&#39;</span><span class="p">,</span>
+         <span class="s1">&#39;geometry&#39;</span> <span class="o">=&gt;</span> <span class="nb">json_decode</span><span class="p">(</span><span class="nv">$edge</span><span class="p">[</span><span class="s1">&#39;geojson&#39;</span><span class="p">],</span> <span class="k">true</span><span class="p">),</span>
+         <span class="s1">&#39;crs&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;type&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;EPSG&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;properties&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;code&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;4326&#39;</span><span class="p">)</span>
+         <span class="p">),</span>
+         <span class="s1">&#39;properties&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;id&#39;</span> <span class="o">=&gt;</span> <span class="nv">$edge</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;length&#39;</span> <span class="o">=&gt;</span> <span class="nv">$edge</span><span class="p">[</span><span class="s1">&#39;length&#39;</span><span class="p">]</span>
+         <span class="p">)</span>
+      <span class="p">);</span>
+      
+      <span class="c1">// Ajouter un tableau d&#39;éléments au tableau de collection d&#39;éléments</span>
+      <span class="nb">array_push</span><span class="p">(</span><span class="nv">$geojson</span><span class="p">[</span><span class="s1">&#39;features&#39;</span><span class="p">],</span> <span class="nv">$feature</span><span class="p">);</span>
+   <span class="p">}</span>
+
+	
+   <span class="c1">// Fermeture de la connexion</span>
+   <span class="nb">pg_close</span><span class="p">(</span><span class="nv">$dbcon</span><span class="p">);</span>
+
+   <span class="c1">// Renvoyer le résultat</span>
+   <span class="nx">header</span><span class="p">(</span><span class="s1">&#39;Content-type: application/json&#39;</span><span class="p">,</span><span class="k">true</span><span class="p">);</span>
+   <span class="k">echo</span> <span class="nb">json_encode</span><span class="p">(</span><span class="nv">$geojson</span><span class="p">);</span>
+   
+<span class="cp">?&gt;</span><span class="x"></span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/pgrouting.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../index.html">Table des matières</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">8. Script PHP coté serveur</a><ul>
+<li><a class="reference internal" href="#l-arrete-la-plus-proche">8.1. L&#8217;arrête la plus proche</a></li>
+<li><a class="reference internal" href="#requete-de-routage">8.2. Requête de routage</a></li>
+<li><a class="reference internal" href="#sortie-au-format-geojson">8.3. Sortie au format GeoJSON</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Sujet précédent</h4>
+  <p class="topless"><a href="advanced.html"
+                        title="Chapitre précédent">7. Requêtes de routage avancées</a></p>
+  <h4>Sujet suivant</h4>
+  <p class="topless"><a href="geoext_client.html"
+                        title="Chapitre suivant">9. Client en GeoExt</a></p>
+    
+<div id="searchbox" style="display: none">
+  <h3>Recherche rapide</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Saisissez un mot clef ou un nom de module, classe ou fonction.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+    <h3>License</h3>
+    <p style="font-size: 90%; margin-top:2px;">Ce travail est distribué sous licence <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/">Creative Commons Attribution-Share Alike 3.0 License</a>.</p>
+    <p style="margin:0;"><a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a></p>
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="geoext_client.html" title="9. Client en GeoExt"
+             >suivant</a></li>
+        <li class="right" >
+          <a href="advanced.html" title="7. Requêtes de routage avancées"
+             >précédent</a> |</li>
+        <li><a href="../index.html">Travaux pratiques - Routage FOSS4G avec les outils de pgRouting, le reseau routier d&#39;OpenStreetMap et GeoExt</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010-2011 Daniel Kastl, Frédéric Junod.
+      Mis à jour le Apr 02, 2012.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,190 @@
+
+<style>
+	.toctree-wrapper {
+		-webkit-column-count: 2;
+		-moz-column-count: 2;
+		column-count: 2;
+	}
+</style>
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>2. À propos &mdash; Travaux pratiques - Routage FOSS4G avec les outils de pgRouting, le reseau routier d&#39;OpenStreetMap et GeoExt</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="top" title="Travaux pratiques - Routage FOSS4G avec les outils de pgRouting, le reseau routier d&#39;OpenStreetMap et GeoExt" href="../index.html" />
+    <link rel="next" title="3. Installation et prérequis" href="installation.html" />
+    <link rel="prev" title="1. Introduction" href="introduction.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="installation.html" title="3. Installation et prérequis"
+             accesskey="N">suivant</a></li>
+        <li class="right" >
+          <a href="introduction.html" title="1. Introduction"
+             accesskey="P">précédent</a> |</li>
+        <li><a href="../index.html">Travaux pratiques - Routage FOSS4G avec les outils de pgRouting, le reseau routier d&#39;OpenStreetMap et GeoExt</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="a-propos">
+<h1>2. À propos<a class="headerlink" href="#a-propos" title="Lien permanent vers ce titre">¶</a></h1>
+<p>Ces travaux pratiques utilisent de nombreux outils FOSS4G, beaucoup plus que le titre ne le laisse supposer. Ainsi, de nombreux logiciels FOSS4G sont liés au autres project OpenSource et ce serait aller trop loin de tous les lister. Il y a néanmoins 4 projets OpenSource que ces travaux pratiues présenterons :</p>
+<img alt="../_images/osgeo.png" class="align-center" src="../_images/osgeo.png" />
+<div class="section" id="pgrouting">
+<h2>2.1. pgRouting<a class="headerlink" href="#pgrouting" title="Lien permanent vers ce titre">¶</a></h2>
+<p>pgRouting est un extension de PostGIS et ajoute les fonctionalités de routing au couple PostGIS/PostgreSQL. pgRouting est un développement antérieur à pgDijkstra (par <a class="reference external" href="http://www.camptocamp.com">Camptocamp SA</a>). Il a été étendu par l&#8217;entreprise <a class="reference external" href="http://www.orkney.co.jp">Orkney Inc.</a> et est actuellement développé et maintenu par <a class="reference external" href="http://georepublic.de">Georepublic</a>.</p>
+<img alt="../_images/pgrouting.png" class="align-center" src="../_images/pgrouting.png" />
+<p>pgRouting fournit les fonctions pour :</p>
+<ul class="simple">
+<li>Plus court chemin Dikstra : algorithme de routage sans heusitique</li>
+<li>Plus court chemin A-Étoile : routage pour grand un ensemble de données (avec heuristiques)</li>
+<li>Plus court chemin Shooting-Star: routage prenant en compte le sens giratoir (avec heuristiques)</li>
+<li>Problème du voyageur de commerce (TSP)</li>
+<li>Distance de pilotage (Isolines)</li>
+</ul>
+<p>De nombreux nouveaux algorithmes vont être ajoutés dans un futur proche :</p>
+<ul class="simple">
+<li>Dial-a-Ride-Problem solver (DARP)</li>
+<li>Support du routage multimodal</li>
+<li>Algortihme de recherche de plus court chemin dépendant du temps / dynamique</li>
+<li>A-Étoile utilisant deux direction</li>
+<li>All-Pair shortest path algorithm</li>
+</ul>
+<p>Les avantages de l&#8217;approche base de données pour les algorithmes de routage sont :</p>
+<ul class="simple">
+<li>L&#8217;accessibilité par nombreux clients au travers de JDBC, ODBC, our directement en tuililsant Pl/pgSQL. Les clients peuvent être des ordinateurs personnels ou des périfériques mobiles.</li>
+<li>Utilise PostGIS pour le format des données géographiques, qui utilise le Format Text Bien Connu (WKT) de l&#8217;OGC et le Format Binaire Bien Connu (WKB).</li>
+<li>Les logiciels OpenSource comme qGIS et uDig peuvent modifier les données / les attributs.</li>
+<li>Les modifications apportées aux données peuvent être intégrées au moteur de routage instantanément. Il n&#8217;y pas de besoin de pré-calcul.</li>
+<li>Le paramètre de &#8220;coût&#8221; peut être calculé dynamiquement à l&#8217;aide du SQL et ces valeurs peuvent provenir de différets attributsou tables.</li>
+</ul>
+<p>pgRouting est disponible sous licence GPLv2.</p>
+<p>Le site web officiel de pgRouting : <a class="reference external" href="http://www.pgrouting.org">http://www.pgrouting.org</a></p>
+</div>
+<div class="section" id="openstreetmap">
+<h2>2.2. OpenStreetMap<a class="headerlink" href="#openstreetmap" title="Lien permanent vers ce titre">¶</a></h2>
+<p><em>&#8220;OpenStreetMap a pour objectif de créer et fournir des informations géographiques libres telles que des plans de rue à toute personne le désirant. Le projet fut démarré car la plupart des cartes qui semblent libres ont en fait des restrictions d’utilisation légales ou techniques, empêchant de les utiliser de manière créative, productive ou tout simplement selon vos souhaits.&#8221;</em> (Source: <a class="reference external" href="http://wiki.openstreetmap.org/wiki/FR:Portal:Press">http://wiki.openstreetmap.org/wiki/FR:Portal:Press</a>)</p>
+<img alt="../_images/osm_logo.png" class="align-center" src="../_images/osm_logo.png" />
+<p>OpenStreetMap est une source de données parfaite pour être utilisées avec pgRouting, car elles sont librement disponibles et n&#8217;ont pas de restrictions techniques en terme d&#8217;utilisation. La disponibilité des données varie d&#8217;un pays à un autre, mais la couverture mondiale s&#8217;améliore de jour en jour.</p>
+<p>OpenStreetMap utilise une structuration de données topologiques :</p>
+<ul class="simple">
+<li>Les noeuds (nodes) sont des points avec une position géographique.</li>
+<li>Les chemins (ways) sont des liste de noeuds, représentant une polyligne ou un polygone.</li>
+<li>Les relations (relations) sont des groupes de noeud, de chemin et d&#8217;autre relations auquelles on peut affecter certaines propriétés.</li>
+<li>Les propriétés (tags) peuvent être appliqués à des noeuds, des chemins ou des relation et consistent en un couple nom=valeur.</li>
+</ul>
+<p>Site web d&#8217;OpenStreetMap : <a class="reference external" href="http://www.openstreetmap.org">http://www.openstreetmap.org</a></p>
+</div>
+<div class="section" id="osm2pgrouting">
+<h2>2.3. osm2pgrouting<a class="headerlink" href="#osm2pgrouting" title="Lien permanent vers ce titre">¶</a></h2>
+<p>osm2pgrouting est un outils en ligne de commande qui rend simple l&#8217;importation de données OpenStreetMap dans une base de données pgRouting. Il contruit le réseau routier automatiquement et crée les tables pour les types de données et les classes de routes. osm2pgrouting a été écrit initialement par Daniel Wendt et est maintenant disponible sur le site du projet pgRouting.</p>
+<p>osm2pgrouting est disponible sous licence GPLv2.</p>
+<p>Site web du projet : <a class="reference external" href="http://www.pgrouting.org/docs/tools/osm2pgrouting.html">http://www.pgrouting.org/docs/tools/osm2pgrouting.html</a></p>
+</div>
+<div class="section" id="geoext">
+<h2>2.4. GeoExt<a class="headerlink" href="#geoext" title="Lien permanent vers ce titre">¶</a></h2>
+<p>GeoExt est une librairie JavaScript destinée au applications web avancées. GeoExt rassemble les connaissances géospatiales de <a class="reference external" href="http://www.openlayers.org">OpenLayers</a> avec une interface utilisateurs issue de <a class="reference external" href="http://www.sencha.com">Ext JS</a> pour aider à construire un application web ressemblant à une application bureautique.</p>
+<img alt="../_images/GeoExt.png" class="align-center" src="../_images/GeoExt.png" />
+<p>GeoExt est disponible sous licence BSD et est maintenu par une communauté grandissante d&#8217;individus, d&#8217;ogranisations et d&#8217;entreprises.</p>
+<p>Le site web de GeoExt : <a class="reference external" href="http://www.geoext.org">http://www.geoext.org</a></p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/pgrouting.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../index.html">Table des matières</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">2. À propos</a><ul>
+<li><a class="reference internal" href="#pgrouting">2.1. pgRouting</a></li>
+<li><a class="reference internal" href="#openstreetmap">2.2. OpenStreetMap</a></li>
+<li><a class="reference internal" href="#osm2pgrouting">2.3. osm2pgrouting</a></li>
+<li><a class="reference internal" href="#geoext">2.4. GeoExt</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Sujet précédent</h4>
+  <p class="topless"><a href="introduction.html"
+                        title="Chapitre précédent">1. Introduction</a></p>
+  <h4>Sujet suivant</h4>
+  <p class="topless"><a href="installation.html"
+                        title="Chapitre suivant">3. Installation et prérequis</a></p>
+    
+<div id="searchbox" style="display: none">
+  <h3>Recherche rapide</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Saisissez un mot clef ou un nom de module, classe ou fonction.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+    <h3>License</h3>
+    <p style="font-size: 90%; margin-top:2px;">Ce travail est distribué sous licence <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/">Creative Commons Attribution-Share Alike 3.0 License</a>.</p>
+    <p style="margin:0;"><a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a></p>
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="installation.html" title="3. Installation et prérequis"
+             >suivant</a></li>
+        <li class="right" >
+          <a href="introduction.html" title="1. Introduction"
+             >précédent</a> |</li>
+        <li><a href="../index.html">Travaux pratiques - Routage FOSS4G avec les outils de pgRouting, le reseau routier d&#39;OpenStreetMap et GeoExt</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010-2011 Daniel Kastl, Frédéric Junod.
+      Mis à jour le Apr 02, 2012.
+    </div>
+  </body>
+</html>

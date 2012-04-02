@@ -1,0 +1,168 @@
+
+<style>
+	.toctree-wrapper {
+		-webkit-column-count: 2;
+		-moz-column-count: 2;
+		column-count: 2;
+	}
+</style>
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pgRouting Workshop Manual &mdash; Travaux pratiques - Routage FOSS4G avec les outils de pgRouting, le reseau routier d&#39;OpenStreetMap et GeoExt</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/translations.js"></script>
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+    <link rel="top" title="Travaux pratiques - Routage FOSS4G avec les outils de pgRouting, le reseau routier d&#39;OpenStreetMap et GeoExt" href="#" />
+    <link rel="next" title="1. Introduction" href="chapters/introduction.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="chapters/introduction.html" title="1. Introduction"
+             accesskey="N">suivant</a></li>
+        <li><a href="#">Travaux pratiques - Routage FOSS4G avec les outils de pgRouting, le reseau routier d&#39;OpenStreetMap et GeoExt</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="pgrouting-workshop-manual">
+<h1>pgRouting Workshop Manual<a class="headerlink" href="#pgrouting-workshop-manual" title="Lien permanent vers ce titre">¶</a></h1>
+<p><em>&#8220;Routage FOSS4G avec les outils pgRouting, le réseau routier d&#8217;OpenStreetMap et GeoExt&#8221;</em>, originalement écrit pour les travaux pratiques du <a class="reference external" href="http://2011.foss4g.org/sessions/foss4g-routing-pgrouting-tools-openstreetmap-road-data-and-geoext">FOSS4G2011</a>.</p>
+<p class="rubric">Contenu</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="chapters/introduction.html">1. Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="chapters/about.html">2. À propos</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="chapters/about.html#pgrouting">2.1. pgRouting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapters/about.html#openstreetmap">2.2. OpenStreetMap</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapters/about.html#osm2pgrouting">2.3. osm2pgrouting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapters/about.html#geoext">2.4. GeoExt</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="chapters/installation.html">3. Installation et prérequis</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="chapters/installation.html#pgrouting">3.1. pgRouting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapters/installation.html#travaux-pratiques">3.2. Travaux pratiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapters/installation.html#base-de-donnees-a-partir-de-modele">3.3. Base de données à partir de modèle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapters/installation.html#chargement-des-functions">3.4. Chargement des functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapters/installation.html#donnees">3.5. Données</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="chapters/osm2pgrouting.html">4. Outils d&#8217;import osm2pgrouting</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="chapters/osm2pgrouting.html#creation-de-la-base-de-donnees-routing">4.1. Création de la base de données routing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapters/osm2pgrouting.html#utiliser-osm2pgrouting">4.2. Utiliser osm2pgrouting</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="chapters/topology.html">5. Création de la topologie du réseau</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="chapters/topology.html#charger-les-donnees-de-reseau">5.1. Charger les données de réseau</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapters/topology.html#calcul-de-la-topologie">5.2. Calcul de la topologie</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapters/topology.html#ajouter-des-indexes">5.3. Ajouter des indexes</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="chapters/shortest_path.html">6. Plus courts chemins</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="chapters/shortest_path.html#dijkstra">6.1. Dijkstra</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapters/shortest_path.html#a-etoile">6.2. A-Étoile</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapters/shortest_path.html#shooting-star">6.3. Shooting-Star</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="chapters/advanced.html">7. Requêtes de routage avancées</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="chapters/advanced.html#couts-ponderes">7.1. Coûts pondérés</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapters/advanced.html#restriction-d-acces">7.2. Restriction d&#8217;accès</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="chapters/php_server.html">8. Script PHP coté serveur</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="chapters/php_server.html#l-arrete-la-plus-proche">8.1. L&#8217;arrête la plus proche</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapters/php_server.html#requete-de-routage">8.2. Requête de routage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapters/php_server.html#sortie-au-format-geojson">8.3. Sortie au format GeoJSON</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="chapters/geoext_client.html">9. Client en GeoExt</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="chapters/geoext_client.html#outil-de-selection-de-la-methode-de-routage">9.1. Outil de sélection de la méthode de routage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapters/geoext_client.html#selectionner-un-point-de-depart-et-d-arrivee">9.2. Sélectionner un point de départ et d&#8217;arrivée</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapters/geoext_client.html#envoyer-et-recevoire-des-donnees-du-service-web">9.3. Envoyer et recevoire des données du service web</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapters/geoext_client.html#declancher-l-appel-au-service-web">9.4. Déclancher l&#8217;appel au service web</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapters/geoext_client.html#que-faire-maintenant">9.5. Que faire maintenant ?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapters/geoext_client.html#code-source-complet">9.6. Code source complet</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="#">
+              <img class="logo" src="_static/pgrouting.png" alt="Logo"/>
+            </a></p>
+  <h4>Sujet suivant</h4>
+  <p class="topless"><a href="chapters/introduction.html"
+                        title="Chapitre suivant">1. Introduction</a></p>
+    
+<div id="searchbox" style="display: none">
+  <h3>Recherche rapide</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Saisissez un mot clef ou un nom de module, classe ou fonction.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+    <h3>License</h3>
+    <p style="font-size: 90%; margin-top:2px;">Ce travail est distribué sous licence <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/">Creative Commons Attribution-Share Alike 3.0 License</a>.</p>
+    <p style="margin:0;"><a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a></p>
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="chapters/introduction.html" title="1. Introduction"
+             >suivant</a></li>
+        <li><a href="#">Travaux pratiques - Routage FOSS4G avec les outils de pgRouting, le reseau routier d&#39;OpenStreetMap et GeoExt</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010-2011 Daniel Kastl, Frédéric Junod.
+      Mis à jour le Apr 02, 2012.
+    </div>
+  </body>
+</html>

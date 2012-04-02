@@ -1,0 +1,269 @@
+
+<style>
+	.toctree-wrapper {
+		-webkit-column-count: 2;
+		-moz-column-count: 2;
+		column-count: 2;
+	}
+</style>
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>3. Installation et prérequis &mdash; Travaux pratiques - Routage FOSS4G avec les outils de pgRouting, le reseau routier d&#39;OpenStreetMap et GeoExt</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="top" title="Travaux pratiques - Routage FOSS4G avec les outils de pgRouting, le reseau routier d&#39;OpenStreetMap et GeoExt" href="../index.html" />
+    <link rel="next" title="4. Outils d’import osm2pgrouting" href="osm2pgrouting.html" />
+    <link rel="prev" title="2. À propos" href="about.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="osm2pgrouting.html" title="4. Outils d’import osm2pgrouting"
+             accesskey="N">suivant</a></li>
+        <li class="right" >
+          <a href="about.html" title="2. À propos"
+             accesskey="P">précédent</a> |</li>
+        <li><a href="../index.html">Travaux pratiques - Routage FOSS4G avec les outils de pgRouting, le reseau routier d&#39;OpenStreetMap et GeoExt</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="installation-et-prerequis">
+<h1>3. Installation et prérequis<a class="headerlink" href="#installation-et-prerequis" title="Lien permanent vers ce titre">¶</a></h1>
+<p>Pour ces travaux pratiques, vous aurez besoin de :</p>
+<ul class="simple">
+<li>un serveur wev comme Apache avec le support PHP d&#8217;activé (et le module PostgreSQL de PHP)</li>
+<li>De préférence un système d&#8217;exploitation de type Linux comme Ubuntu</li>
+<li>Un éditeur de texte comme Gedit</li>
+<li>Une connexion internet</li>
+</ul>
+<p>Tout les outils requis sont disponibles sur l&#8217;OSGeo LiveDVD, donc les références qui suivent représentent un rapide résumé de comment l&#8217;installer sur votre propre machine tournant sur Ubuntu 10.04 ou suppérieur.</p>
+<div class="section" id="pgrouting">
+<h2>3.1. pgRouting<a class="headerlink" href="#pgrouting" title="Lien permanent vers ce titre">¶</a></h2>
+<p>L&#8217;installation de pgRouting sur Ubuntu est devenu extrêmement simple du fait de la disponibilité d&#8217;un paquet binaire dans le <a class="reference external" href="https://launchpad.net/~georepublic/+archive/pgrouting">dépot Launchpad</a>: .</p>
+<p>Tout ce que vous avez à faire maintenant c&#8217;est d&#8217;ouvrir un fenêtre de terminal et de lancer :</p>
+<div class="highlight-bash"><div class="highlight"><pre><span class="c"># Ajouter le dépôt launchpad</span>
+sudo add-apt-repository ppa:georepublic/pgrouting
+sudo apt-get update
+
+<span class="c"># Installer les paquets pgRouting</span>
+sudo apt-get install gaul-devel <span class="se">\</span>
+        postgresql-8.4-pgrouting <span class="se">\</span>
+        postgresql-8.4-pgrouting-dd <span class="se">\</span>
+        postgresql-8.4-pgrouting-tsp
+
+<span class="c"># Installer le paquet osm2pgrouting</span>
+sudo apt-get install osm2pgrouting
+
+<span class="c"># Installé le contenu des travaux pratiques (optionel)</span>
+sudo apt-get install pgrouting-workshop
+</pre></div>
+</div>
+<p>Cela installera aussi tout les paquets dépendants comme PostgreSQL et PostGIS s&#8217;ils ne sont pas déjà installé.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<ul class="last simple">
+<li>Les paquets &#8220;multiverse&#8221; doivent être disponible comme des sourecs de logiciels. Actuellement les paquets pour Ubuntu 10.04 à 11.04 sont disponibles.</li>
+<li>Pour prendre en compte les nouveaux dépôts et avoir une liste des tout deniers paquets à jour, vous devez lancer <tt class="docutils literal"><span class="pre">sudo</span> <span class="pre">apt-get</span> <span class="pre">update</span> <span class="pre">&amp;</span> <span class="pre">sudo</span> <span class="pre">apt-get</span> <span class="pre">upgrade</span></tt> de temps en temps, tout spécialement si vous utilisez une ancienne version du LiveDVD.</li>
+<li>Afin d&#8217;éviter les problèmes de permissions, vous pouvez utiliser la méthode de connexion <tt class="docutils literal"><span class="pre">trust</span></tt> dans <tt class="docutils literal"><span class="pre">/etc/postgresql/8.4/main/pg_hba.conf</span></tt> et redémarrer le serveur PostgreSQL avec <tt class="docutils literal"><span class="pre">sudo</span> <span class="pre">service</span> <span class="pre">postgresql-8.4</span> <span class="pre">restart</span></tt>.</li>
+</ul>
+</div>
+</div>
+<div class="section" id="travaux-pratiques">
+<h2>3.2. Travaux pratiques<a class="headerlink" href="#travaux-pratiques" title="Lien permanent vers ce titre">¶</a></h2>
+<p>Suite à l&#8217;installation du paquet workshop, vous touverez tout les documents dans <tt class="docutils literal"><span class="pre">/usr/share/pgrouting/workshop/</span></tt>.</p>
+<p>Nous recommendons de copier l&#8217;ensemble de ces fichiers dans le répertoire de votre utilisateur et de créer un lient symbolique vers votre serveur web :</p>
+<div class="highlight-bash"><div class="highlight"><pre>cp -R /usr/share/pgrouting/workshop ~/Desktop/pgrouting-workshop
+sudo ln -s ~/Desktop/pgrouting-workshop /var/www/pgrouting-workshop
+</pre></div>
+</div>
+<p>Vous pouvez ensuite trouver les fichiers des travaux pratiques dans le répertoire <tt class="docutils literal"><span class="pre">pgrouting-workshop</span></tt> et y accéder :</p>
+<ul class="simple">
+<li>Répertoire Web : <a class="reference external" href="http://localhost/pgrouting-workshop/web/">http://localhost/pgrouting-workshop/web/</a></li>
+<li>Manuel en ligne : <a class="reference external" href="http://localhost/pgrouting-workshop/docs/html/">http://localhost/pgrouting-workshop/docs/html/</a></li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Des exemple de données additionelles sont disponibles dans le répertoire <tt class="docutils literal"><span class="pre">data</span></tt> des travaux pratique. Ils contiennent un fichier compressé contenant les sauvegardes de base de données ainsi qu&#8217;un plus petit ensemble de données du réseau routier du centre ville de Denver. Pour décompresser ce fichier, exécuter la commande <tt class="docutils literal"><span class="pre">tar</span> <span class="pre">-xzf</span> <span class="pre">~/Desktop/pgrouting-workshop/data.tar.gz</span></tt>.</p>
+</div>
+</div>
+<div class="section" id="base-de-donnees-a-partir-de-modele">
+<h2>3.3. Base de données à partir de modèle<a class="headerlink" href="#base-de-donnees-a-partir-de-modele" title="Lien permanent vers ce titre">¶</a></h2>
+<p>C&#8217;est une bonne idée de créer un modèle de bases de données PostGIS et pgRouting. Cela rendra plus facile la création de nouvelles bases de données incluant déjà les fonctionnalités requises, sans avoir à charger les fichiers SQL pour chaque nouvelle base.</p>
+<p>Un script est disponible dans le répertoire <tt class="docutils literal"><span class="pre">bin</span></tt> des travaux pratiques pour ajouter des modèles de bases de données incluant les fonctionnalités de PostGIS et pgRouting. Pour créer une base de données modèles, exécutez les commandes suivantes depuis une fenêtre de terminal :</p>
+<div class="highlight-bash"><div class="highlight"><pre><span class="nb">cd</span> ~/Desktop/pgrouting-workshop
+bash bin/create_templates.sh
+</pre></div>
+</div>
+<p>Maintenant vous pouvez créer une nouvelle base incluant les fonctionnalités pgRouting en utilsant <tt class="docutils literal"><span class="pre">template_routing</span></tt> comme modèle. Lancez la commande suivante dans une fenêtr ede terminal :</p>
+<div class="highlight-bash"><div class="highlight"><pre><span class="c"># Création de la base de données &quot;routing&quot;</span>
+createdb -U postgres -T template_routing routing
+</pre></div>
+</div>
+<p>Vous povez aussi utiliser <strong>PgAdmin III</strong> et des commandes SQL. Démarrez PgAdmin III (disponible sur le LiveDVD), connectez-vous à n&#8217;importe quelle base de données et ouvrez l&#8217;éditeur SQL afin de lancer les commandes SQL suivantes :</p>
+<div class="highlight-sql"><div class="highlight"><pre><span class="c1">-- Création de la base routing</span>
+<span class="k">CREATE</span> <span class="k">DATABASE</span> <span class="ss">&quot;routing&quot;</span> <span class="k">TEMPLATE</span> <span class="ss">&quot;template_routing&quot;</span><span class="p">;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="chargement-des-functions">
+<span id="installation-load-functions"></span><h2>3.4. Chargement des functions<a class="headerlink" href="#chargement-des-functions" title="Lien permanent vers ce titre">¶</a></h2>
+<p>Sans une base de données modèle, de nombreux fichiers contenant les fonctions de pgRouting doivent être chargés dans la base. Pour procéder de la sorte, utilsez les commandes suivantes depuis une fenêtre de terminal :</p>
+<div class="highlight-bash"><div class="highlight"><pre><span class="c"># Passer en utilisateur &quot;postgres&quot; (ou lancez, en tant qu&#39;utilisateur &quot;postgres&quot;)</span>
+sudo su postgres
+
+<span class="c"># Création d&#39;un base routing</span>
+createdb routing
+createlang plpgsql routing
+
+<span class="c"># Ajouter les fonctions PostGIS</span>
+psql -d routing -f /usr/share/postgresql/8.4/contrib/postgis-1.5/postgis.sql
+psql -d routing -f /usr/share/postgresql/8.4/contrib/postgis-1.5/spatial_ref_sys.sql
+
+<span class="c"># Ajouter les fonctions de base de pgRouting</span>
+psql -d routing -f /usr/share/postlbs/routing_core.sql
+psql -d routing -f /usr/share/postlbs/routing_core_wrappers.sql
+psql -d routing -f /usr/share/postlbs/routing_topology.sql
+</pre></div>
+</div>
+<p>Encore un fois, vous pouvez utiliser <strong>PgAdmin III</strong> et des commandes SQL. Démarrez PgAdmin III, connextez-vous à n&#8217;importe quelle base de données, ouvrez l&#8217;éditeur de commande SQL et saisissez les commandes suivantes :</p>
+<div class="highlight-sql"><div class="highlight"><pre><span class="c1">-- Création de la base routing</span>
+<span class="k">CREATE</span> <span class="k">DATABASE</span> <span class="ss">&quot;routing&quot;</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Connectez-vous ensuite à la base <tt class="docutils literal"><span class="pre">routing</span></tt> et ouvrez une nouvelle fenêtre d&#8217;éditeur SQL :</p>
+<div class="highlight-sql"><div class="highlight"><pre><span class="c1">-- Ajouter le support plpgsql et les fonctions PostGIS/pgRouting</span>
+<span class="k">CREATE</span> <span class="k">PROCEDURAL</span> <span class="k">LANGUAGE</span> <span class="n">plpgsql</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Maintenant, ouvrez les fichiers <tt class="docutils literal"><span class="pre">.sql</span></tt> contenant les fonctions PostGIS/pgRouting listée précédemment et chargez les dans la base de données <tt class="docutils literal"><span class="pre">routing</span></tt>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">PostGIS <tt class="docutils literal"><span class="pre">.sql</span></tt> files can be stored in different directories. The exact location depends on your version of PostGIS and PostgreSQL. The example above is valid for PostgeSQL/PostGIS version 1.5 installed on OSGeo LiveDVD.</p>
+</div>
+</div>
+<div class="section" id="donnees">
+<h2>3.5. Données<a class="headerlink" href="#donnees" title="Lien permanent vers ce titre">¶</a></h2>
+<p>Les travaux pratiques pgRouting utiliseront les données de Denver d&#8217;OpenStreetMap, quisont déjà disponibles sur le LiveDVD. Si vous n&#8217;utilisez pas le LiveDV ou si vous voulez télécharger les dernières données ou des données de votre choix, vous pouvez utiliser l&#8217;API OpenStreetMap depuis votre fenêtre de terminal :</p>
+<div class="highlight-bash"><div class="highlight"><pre><span class="c"># Télécharger le fichier sampledata.osm</span>
+wget --progress<span class="o">=</span>dot:mega -O <span class="s2">&quot;sampledata.osm&quot;</span>
+        <span class="s2">&quot;http://jxapi.openstreetmap.org/xapi/api/0.6/*</span>
+<span class="s2">                                        [bbox=-105.2147,39.5506,-104.594,39.9139]&quot;</span>
+</pre></div>
+</div>
+<p>L&#8217;API a une limite de taille de téléchargment, ce qui peut être problématique pour télécharger une grande étendu géographique avec de nombreux éléments. Une alternative est d&#8217;utiliser  <a class="reference external" href="http://josm.openstreetmap.de">l&#8217;éditeur JOSM</a>, qui utilisera aussi des appels à l&#8217;API pour télécharger les données, mais il fournit un interface facile d&#8217;utilisation pour les utilisateurs. Vous pouvez sauvegarder les données come un fichier <tt class="docutils literal"><span class="pre">.osm</span></tt> pour l&#8217;utiliser avec ces travaux pratiques. JSOM est aussi disponible sur le LiveDVD.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<ul class="last simple">
+<li>OpenStreetMap API v0.6, voir pour plus d&#8217;informations <a class="reference external" href="http://wiki.openstreetmap.org/index.php/OSM_Protocol_Version_0.6">http://wiki.openstreetmap.org/index.php/OSM_Protocol_Version_0.6</a></li>
+<li>Les données de Denver sont disponibles sur le LiveDVD dans le répertoire <tt class="docutils literal"><span class="pre">/usr/local/share/osm/</span></tt></li>
+</ul>
+</div>
+<p>Une alternative, pour de très grandes étendues est d&#8217;utiliser le service de téléchargement de <a class="reference external" href="http://www.cloudemade.com">CloudMade</a>. Cette entreprise offre des extractions de cartes pour tous les pays du monde. Pour les données du Colorado par exemple, allez sur le page <a class="reference external" href="http://download.cloudmade.com/americas/northern_america/united_states/colorado">http://download.cloudmade.com/americas/northern_america/united_states/colorado</a> et téléchargez le fichier compressé <tt class="docutils literal"><span class="pre">.osm.bz2</span></tt> :</p>
+<div class="highlight-bash"><div class="highlight"><pre>wget --progress<span class="o">=</span>dot:mega http://download.cloudmade.com/americas/northern_america/united_states/colorado/colorado.osm.bz2
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Les données d&#8217;un pays complet peuvent être trop grande par rapport à l&#8217;espace disponible sur le LiveDVD et nécessité des temps de calculs extrêmement long.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/pgrouting.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../index.html">Table des matières</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">3. Installation et prérequis</a><ul>
+<li><a class="reference internal" href="#pgrouting">3.1. pgRouting</a></li>
+<li><a class="reference internal" href="#travaux-pratiques">3.2. Travaux pratiques</a></li>
+<li><a class="reference internal" href="#base-de-donnees-a-partir-de-modele">3.3. Base de données à partir de modèle</a></li>
+<li><a class="reference internal" href="#chargement-des-functions">3.4. Chargement des functions</a></li>
+<li><a class="reference internal" href="#donnees">3.5. Données</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Sujet précédent</h4>
+  <p class="topless"><a href="about.html"
+                        title="Chapitre précédent">2. À propos</a></p>
+  <h4>Sujet suivant</h4>
+  <p class="topless"><a href="osm2pgrouting.html"
+                        title="Chapitre suivant">4. Outils d&#8217;import osm2pgrouting</a></p>
+    
+<div id="searchbox" style="display: none">
+  <h3>Recherche rapide</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Saisissez un mot clef ou un nom de module, classe ou fonction.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+    <h3>License</h3>
+    <p style="font-size: 90%; margin-top:2px;">Ce travail est distribué sous licence <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/">Creative Commons Attribution-Share Alike 3.0 License</a>.</p>
+    <p style="margin:0;"><a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png"></a></p>
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="osm2pgrouting.html" title="4. Outils d’import osm2pgrouting"
+             >suivant</a></li>
+        <li class="right" >
+          <a href="about.html" title="2. À propos"
+             >précédent</a> |</li>
+        <li><a href="../index.html">Travaux pratiques - Routage FOSS4G avec les outils de pgRouting, le reseau routier d&#39;OpenStreetMap et GeoExt</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010-2011 Daniel Kastl, Frédéric Junod.
+      Mis à jour le Apr 02, 2012.
+    </div>
+  </body>
+</html>
